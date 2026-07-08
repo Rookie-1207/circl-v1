@@ -1,0 +1,189 @@
+You are a senior full-stack engineer and product designer.
+
+I am building a startup-quality social networking application called "Circl".
+
+The purpose of Circl is to help college students find like-minded people nearby for:
+
+• Gym partners
+• Study groups
+• Sports partners
+• Startup teammates
+• Hackathon teammates
+• Coffee meetups
+• Hobby groups
+• Gaming friends
+• Travel partners
+
+This is NOT a dating app.
+
+----------------------------------------------------
+
+CURRENT STACK
+
+Frontend
+- React
+- TypeScript
+- TanStack Router
+- Tailwind CSS
+- shadcn/ui
+
+Backend
+- Supabase
+
+Database
+- PostgreSQL (Supabase)
+
+Deployment
+- Vercel
+
+----------------------------------------------------
+
+CURRENT STATUS
+
+Already completed:
+
+✓ Landing Page
+✓ Login Page UI
+✓ Signup Page UI
+✓ Multi-step Onboarding UI
+✓ Dashboard Shell
+✓ Discover Screen UI
+✓ Chat UI
+✓ Profile UI
+✓ Notifications UI
+✓ Settings UI
+
+Authentication is partially implemented but currently broken.
+
+Do NOT spend time fixing authentication right now.
+
+Use mock users whenever authentication blocks development.
+
+----------------------------------------------------
+
+YOUR JOB
+
+First inspect the ENTIRE project.
+
+Understand:
+
+- Folder structure
+- Components
+- Existing design system
+- Existing routes
+- Existing database
+- Existing UI
+
+Do NOT rewrite existing code unless necessary.
+
+Follow the existing design language.
+
+----------------------------------------------------
+
+GOAL
+
+Transform this project into a production-quality startup MVP.
+
+Implement features one by one.
+
+Each feature should be fully functional.
+
+Use reusable components.
+
+Avoid duplicate code.
+
+Keep files clean.
+
+----------------------------------------------------
+
+FEATURES TO BUILD
+
+Priority 1
+
+✓ Dashboard
+✓ Discover Page
+✓ Search
+✓ Filters
+✓ User Cards
+✓ Compatibility Score
+✓ Connect Button
+✓ Pass Button
+
+Priority 2
+
+✓ Matches
+✓ Conversation List
+✓ Real-time Chat UI
+✓ Typing Indicator
+✓ Read Receipts
+
+Priority 3
+
+✓ Profile Editing
+✓ Avatar Upload
+✓ Interests
+✓ Availability
+✓ Goals
+
+Priority 4
+
+✓ Notifications
+✓ Friend Requests
+✓ Match Requests
+
+Priority 5
+
+✓ Settings
+✓ Dark Mode
+✓ Account Preferences
+
+----------------------------------------------------
+
+DATABASE
+
+Continue using Supabase.
+
+Use proper database models.
+
+Do not remove existing tables.
+
+If new tables are required,
+create SQL migration files.
+
+----------------------------------------------------
+
+CODING RULES
+
+• Use TypeScript
+• Use React Hooks
+• Keep components small
+• Follow existing project style
+• Mobile-first responsive UI
+• Beautiful animations
+• Clean architecture
+• No unnecessary dependencies
+• Do not break existing pages
+
+----------------------------------------------------
+
+WORKFLOW
+
+Before changing anything:
+
+1. Inspect the project.
+2. Explain your plan.
+3. Tell me which files will change.
+4. Wait for my approval.
+
+After approval:
+
+Implement ONE feature at a time.
+
+After each feature:
+
+• Explain what changed.
+• Verify there are no TypeScript errors.
+• Verify there are no build errors.
+• Commit only working code.
+
+Never generate placeholder code if the feature can be implemented properly.

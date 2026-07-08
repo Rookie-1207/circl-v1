@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Circl"
+version = "1.0.0"
+id = "artifacts/circl"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24224
+
+[services.development]
+run = "pnpm --filter @workspace/circl run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/circl", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/circl/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24224"
+BASE_PATH = "/"
