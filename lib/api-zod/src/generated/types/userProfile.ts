@@ -5,6 +5,7 @@
  * Circl social networking API
  * OpenAPI spec version: 0.1.0
  */
+import type { UserProfileStudentType } from './userProfileStudentType';
 
 export interface UserProfile {
   id: number;
@@ -12,6 +13,18 @@ export interface UserProfile {
   university: string;
   /** @nullable */
   bio?: string | null;
+  /** @nullable */
+  department?: string | null;
+  /** @nullable */
+  year?: string | null;
+  /** @nullable */
+  section?: string | null;
+  /** @nullable */
+  studentType?: UserProfileStudentType;
+  /** @nullable */
+  githubUrl?: string | null;
+  /** @nullable */
+  linkedinUrl?: string | null;
   interests: string[];
   lookingFor: string[];
   availability: string[];
@@ -20,5 +33,10 @@ export interface UserProfile {
   /** @nullable */
   avatarUrl?: string | null;
   isOnline: boolean;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  profileCompletion: number;
   createdAt: string;
 }

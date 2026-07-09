@@ -2,11 +2,12 @@ import { useListConversations } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
 import { Link } from "wouter";
-import { MessageSquare, ChevronRight } from "lucide-react";
+import { AlertCircle, MessageSquare, ChevronRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 export default function Conversations() {
-  const { data: conversations, isLoading } = useListConversations();
+  const { data: conversations, isLoading, isError, refetch } = useListConversations();
 
   return (
     <div className="space-y-6 h-full flex flex-col">
@@ -29,6 +30,19 @@ export default function Conversations() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center flex-1 py-20 text-center px-4">
+            <div className="h-20 w-20 rounded-full bg-secondary flex items-center justify-center mb-6">
+              <AlertCircle className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h2 className="text-xl font-display font-bold">Could not load messages</h2>
+            <p className="text-muted-foreground mt-2 max-w-sm">
+              Try again in a moment.
+            </p>
+            <Button className="mt-6 rounded-full" variant="outline" onClick={() => refetch()}>
+              Retry
+            </Button>
           </div>
         ) : conversations && conversations.length > 0 ? (
           <div className="divide-y overflow-y-auto">
@@ -81,5 +95,3 @@ export default function Conversations() {
     </div>
   );
 }
-
-import { Button } from "@/components/ui/button";

@@ -4,14 +4,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/user-avatar";
-import { MapPin, ArrowLeft, Check, Target, Clock, Search } from "lucide-react";
+import { AlertCircle, MapPin, ArrowLeft, Check, Target, Clock, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function ViewProfile() {
   const { id } = useParams<{ id: string }>();
   const userId = Number(id);
   
-  const { data: user, isLoading } = useGetUserProfile(userId, {
+  const { data: user, isLoading, isError, refetch } = useGetUserProfile(userId, {
     query: { enabled: !!userId, queryKey: getGetUserProfileQueryKey(userId) }
   });
   
@@ -41,6 +41,19 @@ export default function ViewProfile() {
           </div>
           <Skeleton className="h-20 w-full" />
         </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-center py-20">
+        <AlertCircle className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
+        <h2 className="text-2xl font-bold">Could not load profile</h2>
+        <p className="text-muted-foreground mt-2">Try again in a moment.</p>
+        <Button variant="outline" className="mt-6 rounded-full" onClick={() => refetch()}>
+          Retry
+        </Button>
       </div>
     );
   }

@@ -21,9 +21,13 @@ tags:
   - name: dashboard
     description: Dashboard stats
 
+security:
+  - bearerAuth: []
+
 paths:
   /healthz:
     get:
+      security: []
       operationId: healthCheck
       tags: [health]
       summary: Health check
@@ -297,6 +301,12 @@ paths:
                 $ref: "#/components/schemas/DashboardStats"
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     HealthStatus:
       type: object
@@ -308,7 +318,7 @@ components:
 
     UserProfile:
       type: object
-      required: [id, name, university, interests, lookingFor, availability, isOnline, createdAt]
+      required: [id, name, university, interests, lookingFor, availability, isOnline, profileCompletion, createdAt]
       properties:
         id:
           type: integer
@@ -317,6 +327,19 @@ components:
         university:
           type: string
         bio:
+          type: ["string", "null"]
+        department:
+          type: ["string", "null"]
+        year:
+          type: ["string", "null"]
+        section:
+          type: ["string", "null"]
+        studentType:
+          type: ["string", "null"]
+          enum: [hostel, day_scholar, null]
+        githubUrl:
+          type: ["string", "null"]
+        linkedinUrl:
           type: ["string", "null"]
         interests:
           type: array
@@ -336,6 +359,10 @@ components:
           type: ["string", "null"]
         isOnline:
           type: boolean
+        profileCompletion:
+          type: integer
+          minimum: 0
+          maximum: 100
         createdAt:
           type: string
 
@@ -354,6 +381,19 @@ components:
         name:
           type: string
         bio:
+          type: string
+        department:
+          type: string
+        year:
+          type: string
+        section:
+          type: string
+        studentType:
+          type: string
+          enum: [hostel, day_scholar]
+        githubUrl:
+          type: string
+        linkedinUrl:
           type: string
         interests:
           type: array

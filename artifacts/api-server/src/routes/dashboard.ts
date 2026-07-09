@@ -1,22 +1,14 @@
 import { Router, type IRouter } from "express";
 import { eq, and, or, desc } from "drizzle-orm";
-import { db, usersTable, connectionsTable, conversationsTable, messagesTable, notificationsTable } from "@workspace/db";
+import { db, usersTable, connectionsTable, conversationsTable, messagesTable } from "@workspace/db";
 import { GetDashboardStatsResponse } from "@workspace/api-zod";
+import { formatUserProfile } from "../lib/userProfile";
 
 const router: IRouter = Router();
-const CURRENT_USER_ID = 1;
-
-function formatUser(u: typeof usersTable.$inferSelect) {
-  return {
-    ...u,
-    bio: u.bio ?? null,
-    goals: u.goals ?? null,
-    avatarUrl: u.avatarUrl ?? null,
-    createdAt: u.createdAt.toISOString(),
-  };
-}
 
 router.get("/dashboard/stats", async (req, res): Promise<void> => {
+  const currentUserId = req.auth.userId;
+
   // Total matches (accepted connections)
   const matches = await db
     .select()
@@ -24,8 +16,8 @@ router.get("/dashboard/stats", async (req, res): Promise<void> => {
     .where(
       and(
         or(
-          eq(connectionsTable.fromUserId, CURRENT_USER_ID),
-          eq(connectionsTable.toUserId, CURRENT_USER_ID)
+          eq(connectionsTable.fromUserId, currentUserId),
+          eq(connectionsTable.toUserId, currentUserId)
         ),
         eq(connectionsTable.status, "accepted")
       )
@@ -37,7 +29,7 @@ router.get("/dashboard/stats", async (req, res): Promise<void> => {
     .from(connectionsTable)
     .where(
       and(
-        eq(connectionsTable.toUserId, CURRENT_USER_ID),
+        eq(connectionsTable.toUserId, currentUserId),
         eq(connectionsTable.status, "pending")
       )
     );
@@ -48,8 +40,8 @@ router.get("/dashboard/stats", async (req, res): Promise<void> => {
     .from(conversationsTable)
     .where(
       or(
-        eq(conversationsTable.user1Id, CURRENT_USER_ID),
-        eq(conversationsTable.user2Id, CURRENT_USER_ID)
+        eq(conversationsTable.user1Id, currentUserId),
+        eq(conversationsTable.user2Id, currentUserId)
       )
     );
 
@@ -63,17 +55,9 @@ router.get("/dashboard/stats", async (req, res): Promise<void> => {
       .where(eq(messagesTable.isRead, false));
 
     newMessages = unreadMessages.filter(
-      (m) => m.senderId !== CURRENT_USER_ID && userConvIds.includes(m.conversationId)
+      (m) => m.senderId !== currentUserId && userConvIds.includes(m.conversationId)
     ).length;
   }
-
-  // Profile views (random-ish for now based on notifications count)
-  const allNotifications = await db
-    .select()
-    .from(notificationsTable)
-    .where(eq(notificationsTable.userId, CURRENT_USER_ID));
-
-  const profileViews = allNotifications.length * 3 + 12;
 
   // Recent matches (users from accepted connections)
   const recentMatchConnections = await db
@@ -82,8 +66,8 @@ router.get("/dashboard/stats", async (req, res): Promise<void> => {
     .where(
       and(
         or(
-          eq(connectionsTable.fromUserId, CURRENT_USER_ID),
-          eq(connectionsTable.toUserId, CURRENT_USER_ID)
+          eq(connectionsTable.fromUserId, currentUserId),
+          eq(connectionsTable.toUserId, currentUserId)
         ),
         eq(connectionsTable.status, "accepted")
       )
@@ -96,31 +80,20 @@ router.get("/dashboard/stats", async (req, res): Promise<void> => {
 
   const recentMatches = recentMatchConnections
     .map((c) => {
-      const otherId = c.fromUserId === CURRENT_USER_ID ? c.toUserId : c.fromUserId;
+      const otherId = c.fromUserId === currentUserId ? c.toUserId : c.fromUserId;
       const user = userMap.get(otherId);
-      return user ? formatUser(user) : null;
+      return user ? formatUserProfile(user) : null;
     })
     .filter(Boolean);
 
-  // Activity by category (based on all users' lookingFor)
+  // Activity by category based on matched users' lookingFor values.
   const categoryMap = new Map<string, number>();
   for (const conn of matches) {
-    const otherId = conn.fromUserId === CURRENT_USER_ID ? conn.toUserId : conn.fromUserId;
+    const otherId = conn.fromUserId === currentUserId ? conn.toUserId : conn.fromUserId;
     const user = userMap.get(otherId);
     if (user) {
       for (const lf of user.lookingFor) {
         categoryMap.set(lf, (categoryMap.get(lf) ?? 0) + 1);
-      }
-    }
-  }
-
-  // If no activity yet, show some placeholder categories from all users
-  if (categoryMap.size === 0) {
-    for (const user of allUsers) {
-      if (user.id !== CURRENT_USER_ID) {
-        for (const lf of user.lookingFor.slice(0, 1)) {
-          categoryMap.set(lf, (categoryMap.get(lf) ?? 0) + 1);
-        }
       }
     }
   }
@@ -135,7 +108,7 @@ router.get("/dashboard/stats", async (req, res): Promise<void> => {
       totalMatches: matches.length,
       pendingRequests: pendingRequests.length,
       newMessages,
-      profileViews,
+      profileViews: 0,
       recentMatches,
       activityByCategory,
     })

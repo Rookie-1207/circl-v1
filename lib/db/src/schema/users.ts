@@ -4,9 +4,16 @@ import { z } from "zod/v4";
 
 export const usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
+  supabaseUserId: text("supabase_user_id").unique(),
   name: text("name").notNull(),
   university: text("university").notNull(),
   bio: text("bio"),
+  department: text("department"),
+  year: text("year"),
+  section: text("section"),
+  studentType: text("student_type"),
+  githubUrl: text("github_url"),
+  linkedinUrl: text("linkedin_url"),
   interests: text("interests").array().notNull().default([]),
   lookingFor: text("looking_for").array().notNull().default([]),
   availability: text("availability").array().notNull().default([]),

@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
-import { eq, and, or, ilike, sql } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { db, usersTable, connectionsTable } from "@workspace/db";
+import { z } from "zod";
 import {
   GetMyProfileResponse,
   UpdateMyProfileBody,
@@ -10,17 +11,54 @@ import {
   GetUserProfileParams,
   GetUserProfileResponse,
 } from "@workspace/api-zod";
+import { formatUserProfile } from "../lib/userProfile";
 
 const router: IRouter = Router();
 
-// Mock current user id (auth not yet implemented)
-const CURRENT_USER_ID = 1;
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .transform((value) => (value ? value : null));
+
+const optionalUrl = z
+  .string()
+  .trim()
+  .url()
+  .max(300)
+  .optional()
+  .or(z.literal("").transform(() => null));
+
+const tagList = z
+  .array(z.string().trim().min(1).max(40))
+  .max(20)
+  .transform((items) => Array.from(new Set(items)));
+
+const ProfileUpdateValidation = UpdateMyProfileBody.extend({
+  name: z.string().trim().min(2).max(80).optional(),
+  bio: optionalText(500),
+  department: optionalText(120),
+  year: optionalText(40),
+  section: optionalText(40),
+  studentType: z.enum(["hostel", "day_scholar"]).optional(),
+  githubUrl: optionalUrl.optional(),
+  linkedinUrl: optionalUrl.optional(),
+  interests: tagList.optional(),
+  lookingFor: tagList.optional(),
+  availability: tagList.optional(),
+  goals: optionalText(500),
+  avatarUrl: optionalUrl.optional(),
+});
 
 router.get("/users/me", async (req, res): Promise<void> => {
+  const currentUserId = req.auth.userId;
+
   const [user] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.id, CURRENT_USER_ID));
+    .where(eq(usersTable.id, currentUserId));
 
   if (!user) {
     res.status(404).json({ error: "User not found" });
@@ -28,18 +66,14 @@ router.get("/users/me", async (req, res): Promise<void> => {
   }
 
   res.json(
-    GetMyProfileResponse.parse({
-      ...user,
-      bio: user.bio ?? null,
-      goals: user.goals ?? null,
-      avatarUrl: user.avatarUrl ?? null,
-      createdAt: user.createdAt.toISOString(),
-    })
+    GetMyProfileResponse.parse(formatUserProfile(user))
   );
 });
 
 router.patch("/users/me", async (req, res): Promise<void> => {
-  const parsed = UpdateMyProfileBody.safeParse(req.body);
+  const currentUserId = req.auth.userId;
+
+  const parsed = ProfileUpdateValidation.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
@@ -48,7 +82,7 @@ router.patch("/users/me", async (req, res): Promise<void> => {
   const [updated] = await db
     .update(usersTable)
     .set(parsed.data)
-    .where(eq(usersTable.id, CURRENT_USER_ID))
+    .where(eq(usersTable.id, currentUserId))
     .returning();
 
   if (!updated) {
@@ -57,17 +91,13 @@ router.patch("/users/me", async (req, res): Promise<void> => {
   }
 
   res.json(
-    UpdateMyProfileResponse.parse({
-      ...updated,
-      bio: updated.bio ?? null,
-      goals: updated.goals ?? null,
-      avatarUrl: updated.avatarUrl ?? null,
-      createdAt: updated.createdAt.toISOString(),
-    })
+    UpdateMyProfileResponse.parse(formatUserProfile(updated))
   );
 });
 
 router.get("/users", async (req, res): Promise<void> => {
+  const currentUserId = req.auth.userId;
+
   const params = DiscoverUsersQueryParams.safeParse(req.query);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -82,12 +112,12 @@ router.get("/users", async (req, res): Promise<void> => {
     .from(connectionsTable)
     .where(
       or(
-        eq(connectionsTable.fromUserId, CURRENT_USER_ID),
-        eq(connectionsTable.toUserId, CURRENT_USER_ID)
+        eq(connectionsTable.fromUserId, currentUserId),
+        eq(connectionsTable.toUserId, currentUserId)
       )
     );
 
-  const excludedIds = new Set<number>([CURRENT_USER_ID]);
+  const excludedIds = new Set<number>([currentUserId]);
   for (const conn of existingConnections) {
     excludedIds.add(conn.fromUserId);
     excludedIds.add(conn.toUserId);
@@ -129,7 +159,7 @@ router.get("/users", async (req, res): Promise<void> => {
   const [currentUser] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.id, CURRENT_USER_ID));
+    .where(eq(usersTable.id, currentUserId));
 
   const results = users.map((u) => {
     let score = 30; // base score
@@ -150,13 +180,7 @@ router.get("/users", async (req, res): Promise<void> => {
     }
 
     return DiscoverUsersResponseItem.parse({
-      user: {
-        ...u,
-        bio: u.bio ?? null,
-        goals: u.goals ?? null,
-        avatarUrl: u.avatarUrl ?? null,
-        createdAt: u.createdAt.toISOString(),
-      },
+      user: formatUserProfile(u),
       compatibilityScore: score,
     });
   });
@@ -185,13 +209,7 @@ router.get("/users/:id", async (req, res): Promise<void> => {
   }
 
   res.json(
-    GetUserProfileResponse.parse({
-      ...user,
-      bio: user.bio ?? null,
-      goals: user.goals ?? null,
-      avatarUrl: user.avatarUrl ?? null,
-      createdAt: user.createdAt.toISOString(),
-    })
+    GetUserProfileResponse.parse(formatUserProfile(user))
   );
 });
 

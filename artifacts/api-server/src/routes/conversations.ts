@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, or, and, desc } from "drizzle-orm";
 import { db, conversationsTable, messagesTable, usersTable } from "@workspace/db";
+import { formatUserProfile } from "../lib/userProfile";
 import {
   GetMessagesParams,
   GetMessagesResponse,
@@ -11,26 +12,17 @@ import {
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
-const CURRENT_USER_ID = 1;
-
-function formatUser(u: typeof usersTable.$inferSelect) {
-  return {
-    ...u,
-    bio: u.bio ?? null,
-    goals: u.goals ?? null,
-    avatarUrl: u.avatarUrl ?? null,
-    createdAt: u.createdAt.toISOString(),
-  };
-}
 
 router.get("/conversations", async (req, res): Promise<void> => {
+  const currentUserId = req.auth.userId;
+
   const convs = await db
     .select()
     .from(conversationsTable)
     .where(
       or(
-        eq(conversationsTable.user1Id, CURRENT_USER_ID),
-        eq(conversationsTable.user2Id, CURRENT_USER_ID)
+        eq(conversationsTable.user1Id, currentUserId),
+        eq(conversationsTable.user2Id, currentUserId)
       )
     )
     .orderBy(desc(conversationsTable.updatedAt));
@@ -40,7 +32,7 @@ router.get("/conversations", async (req, res): Promise<void> => {
 
   const result = await Promise.all(
     convs.map(async (conv) => {
-      const otherId = conv.user1Id === CURRENT_USER_ID ? conv.user2Id : conv.user1Id;
+      const otherId = conv.user1Id === currentUserId ? conv.user2Id : conv.user1Id;
       const otherUser = userMap.get(otherId)!;
 
       const [lastMsg] = await db
@@ -60,11 +52,11 @@ router.get("/conversations", async (req, res): Promise<void> => {
           )
         );
 
-      const unreadCount = unreadRows.filter((m) => m.senderId !== CURRENT_USER_ID).length;
+      const unreadCount = unreadRows.filter((m) => m.senderId !== currentUserId).length;
 
       return {
         id: conv.id,
-        otherUser: formatUser(otherUser),
+        otherUser: formatUserProfile(otherUser),
         lastMessage: lastMsg?.content ?? null,
         unreadCount,
         updatedAt: conv.updatedAt.toISOString(),
@@ -76,6 +68,8 @@ router.get("/conversations", async (req, res): Promise<void> => {
 });
 
 router.get("/conversations/:id/messages", async (req, res): Promise<void> => {
+  const currentUserId = req.auth.userId;
+
   const pathParams = GetMessagesParams.safeParse(req.params);
   if (!pathParams.success) {
     res.status(400).json({ error: pathParams.error.message });
@@ -90,8 +84,8 @@ router.get("/conversations/:id/messages", async (req, res): Promise<void> => {
       and(
         eq(conversationsTable.id, pathParams.data.id),
         or(
-          eq(conversationsTable.user1Id, CURRENT_USER_ID),
-          eq(conversationsTable.user2Id, CURRENT_USER_ID)
+          eq(conversationsTable.user1Id, currentUserId),
+          eq(conversationsTable.user2Id, currentUserId)
         )
       )
     );
@@ -114,7 +108,8 @@ router.get("/conversations/:id/messages", async (req, res): Promise<void> => {
     .where(
       and(
         eq(messagesTable.conversationId, pathParams.data.id),
-        eq(messagesTable.isRead, false)
+        eq(messagesTable.isRead, false),
+        eq(messagesTable.senderId, conv.user1Id === currentUserId ? conv.user2Id : conv.user1Id)
       )
     );
 
@@ -133,6 +128,8 @@ router.get("/conversations/:id/messages", async (req, res): Promise<void> => {
 });
 
 router.post("/conversations/:id/messages", async (req, res): Promise<void> => {
+  const currentUserId = req.auth.userId;
+
   const pathParams = SendMessageParams.safeParse(req.params);
   if (!pathParams.success) {
     res.status(400).json({ error: pathParams.error.message });
@@ -147,8 +144,8 @@ router.post("/conversations/:id/messages", async (req, res): Promise<void> => {
       and(
         eq(conversationsTable.id, pathParams.data.id),
         or(
-          eq(conversationsTable.user1Id, CURRENT_USER_ID),
-          eq(conversationsTable.user2Id, CURRENT_USER_ID)
+          eq(conversationsTable.user1Id, currentUserId),
+          eq(conversationsTable.user2Id, currentUserId)
         )
       )
     );
@@ -168,7 +165,7 @@ router.post("/conversations/:id/messages", async (req, res): Promise<void> => {
     .insert(messagesTable)
     .values({
       conversationId: pathParams.data.id,
-      senderId: CURRENT_USER_ID,
+      senderId: currentUserId,
       content: bodyParsed.data.content,
       isRead: false,
     })

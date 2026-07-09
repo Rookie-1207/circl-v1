@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, and, desc } from "drizzle-orm";
 import { db, notificationsTable, usersTable } from "@workspace/db";
+import { formatUserProfile } from "../lib/userProfile";
 import {
   ListNotificationsResponse,
   MarkAllNotificationsReadResponse,
@@ -9,23 +10,14 @@ import {
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
-const CURRENT_USER_ID = 1;
-
-function formatUser(u: typeof usersTable.$inferSelect) {
-  return {
-    ...u,
-    bio: u.bio ?? null,
-    goals: u.goals ?? null,
-    avatarUrl: u.avatarUrl ?? null,
-    createdAt: u.createdAt.toISOString(),
-  };
-}
 
 router.get("/notifications", async (req, res): Promise<void> => {
+  const currentUserId = req.auth.userId;
+
   const notifications = await db
     .select()
     .from(notificationsTable)
-    .where(eq(notificationsTable.userId, CURRENT_USER_ID))
+    .where(eq(notificationsTable.userId, currentUserId))
     .orderBy(desc(notificationsTable.createdAt));
 
   const allUsers = await db.select().from(usersTable);
@@ -37,7 +29,7 @@ router.get("/notifications", async (req, res): Promise<void> => {
     message: n.message,
     isRead: n.isRead,
     actorId: n.actorId ?? null,
-    actor: n.actorId ? formatUser(userMap.get(n.actorId)!) : undefined,
+    actor: n.actorId ? formatUserProfile(userMap.get(n.actorId)!) : undefined,
     createdAt: n.createdAt.toISOString(),
   }));
 
@@ -45,12 +37,14 @@ router.get("/notifications", async (req, res): Promise<void> => {
 });
 
 router.patch("/notifications/read-all", async (req, res): Promise<void> => {
+  const currentUserId = req.auth.userId;
+
   const updated = await db
     .update(notificationsTable)
     .set({ isRead: true })
     .where(
       and(
-        eq(notificationsTable.userId, CURRENT_USER_ID),
+        eq(notificationsTable.userId, currentUserId),
         eq(notificationsTable.isRead, false)
       )
     )
@@ -60,6 +54,8 @@ router.patch("/notifications/read-all", async (req, res): Promise<void> => {
 });
 
 router.patch("/notifications/:id/read", async (req, res): Promise<void> => {
+  const currentUserId = req.auth.userId;
+
   const pathParams = MarkNotificationReadParams.safeParse(req.params);
   if (!pathParams.success) {
     res.status(400).json({ error: pathParams.error.message });
@@ -72,7 +68,7 @@ router.patch("/notifications/:id/read", async (req, res): Promise<void> => {
     .where(
       and(
         eq(notificationsTable.id, pathParams.data.id),
-        eq(notificationsTable.userId, CURRENT_USER_ID)
+        eq(notificationsTable.userId, currentUserId)
       )
     )
     .returning();
@@ -92,7 +88,7 @@ router.patch("/notifications/:id/read", async (req, res): Promise<void> => {
       message: notification.message,
       isRead: notification.isRead,
       actorId: notification.actorId ?? null,
-      actor: notification.actorId ? formatUser(userMap.get(notification.actorId)!) : undefined,
+      actor: notification.actorId ? formatUserProfile(userMap.get(notification.actorId)!) : undefined,
       createdAt: notification.createdAt.toISOString(),
     })
   );

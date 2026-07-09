@@ -1,17 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useDiscoverUsers, useCreateConnection } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, MapPin, Check, X } from "lucide-react";
+import { AlertCircle, Search, MapPin, Check, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { UserAvatar } from "@/components/user-avatar";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
-
-const CATEGORIES = ["All", "Gym", "Study", "Sports", "Startup", "Hackathon", "Coffee", "Gaming", "Travel"];
 
 export default function Discover() {
   const [search, setSearch] = useState("");
@@ -23,8 +21,24 @@ export default function Discover() {
     ...(category !== "All" ? { category } : {}),
   };
 
-  const { data: results, isLoading, refetch } = useDiscoverUsers(queryParams);
+  const { data: allResults } = useDiscoverUsers();
+  const { data: results, isLoading, isError, refetch } = useDiscoverUsers(
+    Object.keys(queryParams).length > 0 ? queryParams : undefined,
+  );
   const createConnection = useCreateConnection();
+
+  const categories = useMemo(() => {
+    const liveCategories = new Set<string>();
+    for (const result of allResults ?? []) {
+      for (const item of result.user.lookingFor) {
+        liveCategories.add(item);
+      }
+    }
+    if (category !== "All") {
+      liveCategories.add(category);
+    }
+    return ["All", ...Array.from(liveCategories).sort()];
+  }, [allResults, category]);
 
   const handleConnect = (userId: number) => {
     createConnection.mutate(
@@ -76,7 +90,7 @@ export default function Discover() {
       </div>
 
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {CATEGORIES.map((cat) => (
+        {categories.map((cat) => (
           <Button
             key={cat}
             variant={category === cat ? "default" : "secondary"}
@@ -94,6 +108,19 @@ export default function Discover() {
           {[...Array(6)].map((_, i) => (
             <Skeleton key={i} className="h-[380px] rounded-2xl" />
           ))}
+        </div>
+      ) : isError ? (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="h-20 w-20 rounded-full bg-secondary flex items-center justify-center mb-6">
+            <AlertCircle className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h2 className="text-xl font-display font-bold">Could not load people</h2>
+          <p className="text-muted-foreground mt-2 max-w-sm">
+            Try again in a moment.
+          </p>
+          <Button variant="outline" className="mt-6 rounded-full" onClick={() => refetch()}>
+            Retry
+          </Button>
         </div>
       ) : results && results.length > 0 ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

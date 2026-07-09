@@ -19,17 +19,29 @@ export const HealthCheckResponse = zod.object({
 /**
  * @summary Get current user profile
  */
+export const getMyProfileResponseProfileCompletionMin = 0;
+export const getMyProfileResponseProfileCompletionMax = 100;
+
+
+
 export const GetMyProfileResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "university": zod.string(),
   "bio": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "year": zod.string().nullish(),
+  "section": zod.string().nullish(),
+  "studentType": zod.union([zod.literal('hostel'),zod.literal('day_scholar'),zod.literal(null)]).nullish(),
+  "githubUrl": zod.string().nullish(),
+  "linkedinUrl": zod.string().nullish(),
   "interests": zod.array(zod.string()),
   "lookingFor": zod.array(zod.string()),
   "availability": zod.array(zod.string()),
   "goals": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "isOnline": zod.boolean(),
+  "profileCompletion": zod.number().min(getMyProfileResponseProfileCompletionMin).max(getMyProfileResponseProfileCompletionMax),
   "createdAt": zod.string()
 })
 
@@ -40,6 +52,12 @@ export const GetMyProfileResponse = zod.object({
 export const UpdateMyProfileBody = zod.object({
   "name": zod.string().optional(),
   "bio": zod.string().optional(),
+  "department": zod.string().optional(),
+  "year": zod.string().optional(),
+  "section": zod.string().optional(),
+  "studentType": zod.enum(['hostel', 'day_scholar']).optional(),
+  "githubUrl": zod.string().optional(),
+  "linkedinUrl": zod.string().optional(),
   "interests": zod.array(zod.string()).optional(),
   "lookingFor": zod.array(zod.string()).optional(),
   "availability": zod.array(zod.string()).optional(),
@@ -47,17 +65,29 @@ export const UpdateMyProfileBody = zod.object({
   "avatarUrl": zod.string().optional()
 })
 
+export const updateMyProfileResponseProfileCompletionMin = 0;
+export const updateMyProfileResponseProfileCompletionMax = 100;
+
+
+
 export const UpdateMyProfileResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "university": zod.string(),
   "bio": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "year": zod.string().nullish(),
+  "section": zod.string().nullish(),
+  "studentType": zod.union([zod.literal('hostel'),zod.literal('day_scholar'),zod.literal(null)]).nullish(),
+  "githubUrl": zod.string().nullish(),
+  "linkedinUrl": zod.string().nullish(),
   "interests": zod.array(zod.string()),
   "lookingFor": zod.array(zod.string()),
   "availability": zod.array(zod.string()),
   "goals": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "isOnline": zod.boolean(),
+  "profileCompletion": zod.number().min(updateMyProfileResponseProfileCompletionMin).max(updateMyProfileResponseProfileCompletionMax),
   "createdAt": zod.string()
 })
 
@@ -71,18 +101,30 @@ export const DiscoverUsersQueryParams = zod.object({
   "university": zod.coerce.string().optional()
 })
 
+export const discoverUsersResponseUserProfileCompletionMin = 0;
+export const discoverUsersResponseUserProfileCompletionMax = 100;
+
+
+
 export const DiscoverUsersResponseItem = zod.object({
   "user": zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "university": zod.string(),
   "bio": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "year": zod.string().nullish(),
+  "section": zod.string().nullish(),
+  "studentType": zod.union([zod.literal('hostel'),zod.literal('day_scholar'),zod.literal(null)]).nullish(),
+  "githubUrl": zod.string().nullish(),
+  "linkedinUrl": zod.string().nullish(),
   "interests": zod.array(zod.string()),
   "lookingFor": zod.array(zod.string()),
   "availability": zod.array(zod.string()),
   "goals": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "isOnline": zod.boolean(),
+  "profileCompletion": zod.number().min(discoverUsersResponseUserProfileCompletionMin).max(discoverUsersResponseUserProfileCompletionMax),
   "createdAt": zod.string()
 }),
   "compatibilityScore": zod.number()
@@ -97,17 +139,29 @@ export const GetUserProfileParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const getUserProfileResponseProfileCompletionMin = 0;
+export const getUserProfileResponseProfileCompletionMax = 100;
+
+
+
 export const GetUserProfileResponse = zod.object({
   "id": zod.number(),
   "name": zod.string(),
   "university": zod.string(),
   "bio": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "year": zod.string().nullish(),
+  "section": zod.string().nullish(),
+  "studentType": zod.union([zod.literal('hostel'),zod.literal('day_scholar'),zod.literal(null)]).nullish(),
+  "githubUrl": zod.string().nullish(),
+  "linkedinUrl": zod.string().nullish(),
   "interests": zod.array(zod.string()),
   "lookingFor": zod.array(zod.string()),
   "availability": zod.array(zod.string()),
   "goals": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "isOnline": zod.boolean(),
+  "profileCompletion": zod.number().min(getUserProfileResponseProfileCompletionMin).max(getUserProfileResponseProfileCompletionMax),
   "createdAt": zod.string()
 })
 
@@ -119,6 +173,14 @@ export const ListConnectionsQueryParams = zod.object({
   "status": zod.enum(['pending', 'accepted', 'rejected', 'passed']).optional()
 })
 
+export const listConnectionsResponseFromUserProfileCompletionMin = 0;
+export const listConnectionsResponseFromUserProfileCompletionMax = 100;
+
+export const listConnectionsResponseToUserProfileCompletionMin = 0;
+export const listConnectionsResponseToUserProfileCompletionMax = 100;
+
+
+
 export const ListConnectionsResponseItem = zod.object({
   "id": zod.number(),
   "fromUserId": zod.number(),
@@ -129,12 +191,19 @@ export const ListConnectionsResponseItem = zod.object({
   "name": zod.string(),
   "university": zod.string(),
   "bio": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "year": zod.string().nullish(),
+  "section": zod.string().nullish(),
+  "studentType": zod.union([zod.literal('hostel'),zod.literal('day_scholar'),zod.literal(null)]).nullish(),
+  "githubUrl": zod.string().nullish(),
+  "linkedinUrl": zod.string().nullish(),
   "interests": zod.array(zod.string()),
   "lookingFor": zod.array(zod.string()),
   "availability": zod.array(zod.string()),
   "goals": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "isOnline": zod.boolean(),
+  "profileCompletion": zod.number().min(listConnectionsResponseFromUserProfileCompletionMin).max(listConnectionsResponseFromUserProfileCompletionMax),
   "createdAt": zod.string()
 }).optional(),
   "toUser": zod.object({
@@ -142,12 +211,19 @@ export const ListConnectionsResponseItem = zod.object({
   "name": zod.string(),
   "university": zod.string(),
   "bio": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "year": zod.string().nullish(),
+  "section": zod.string().nullish(),
+  "studentType": zod.union([zod.literal('hostel'),zod.literal('day_scholar'),zod.literal(null)]).nullish(),
+  "githubUrl": zod.string().nullish(),
+  "linkedinUrl": zod.string().nullish(),
   "interests": zod.array(zod.string()),
   "lookingFor": zod.array(zod.string()),
   "availability": zod.array(zod.string()),
   "goals": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "isOnline": zod.boolean(),
+  "profileCompletion": zod.number().min(listConnectionsResponseToUserProfileCompletionMin).max(listConnectionsResponseToUserProfileCompletionMax),
   "createdAt": zod.string()
 }).optional(),
   "createdAt": zod.string()
@@ -163,6 +239,14 @@ export const CreateConnectionBody = zod.object({
   "action": zod.enum(['connect', 'pass'])
 })
 
+export const createConnectionResponseFromUserProfileCompletionMin = 0;
+export const createConnectionResponseFromUserProfileCompletionMax = 100;
+
+export const createConnectionResponseToUserProfileCompletionMin = 0;
+export const createConnectionResponseToUserProfileCompletionMax = 100;
+
+
+
 export const CreateConnectionResponse = zod.object({
   "id": zod.number(),
   "fromUserId": zod.number(),
@@ -173,12 +257,19 @@ export const CreateConnectionResponse = zod.object({
   "name": zod.string(),
   "university": zod.string(),
   "bio": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "year": zod.string().nullish(),
+  "section": zod.string().nullish(),
+  "studentType": zod.union([zod.literal('hostel'),zod.literal('day_scholar'),zod.literal(null)]).nullish(),
+  "githubUrl": zod.string().nullish(),
+  "linkedinUrl": zod.string().nullish(),
   "interests": zod.array(zod.string()),
   "lookingFor": zod.array(zod.string()),
   "availability": zod.array(zod.string()),
   "goals": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "isOnline": zod.boolean(),
+  "profileCompletion": zod.number().min(createConnectionResponseFromUserProfileCompletionMin).max(createConnectionResponseFromUserProfileCompletionMax),
   "createdAt": zod.string()
 }).optional(),
   "toUser": zod.object({
@@ -186,12 +277,19 @@ export const CreateConnectionResponse = zod.object({
   "name": zod.string(),
   "university": zod.string(),
   "bio": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "year": zod.string().nullish(),
+  "section": zod.string().nullish(),
+  "studentType": zod.union([zod.literal('hostel'),zod.literal('day_scholar'),zod.literal(null)]).nullish(),
+  "githubUrl": zod.string().nullish(),
+  "linkedinUrl": zod.string().nullish(),
   "interests": zod.array(zod.string()),
   "lookingFor": zod.array(zod.string()),
   "availability": zod.array(zod.string()),
   "goals": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "isOnline": zod.boolean(),
+  "profileCompletion": zod.number().min(createConnectionResponseToUserProfileCompletionMin).max(createConnectionResponseToUserProfileCompletionMax),
   "createdAt": zod.string()
 }).optional(),
   "createdAt": zod.string()
@@ -209,6 +307,14 @@ export const UpdateConnectionBody = zod.object({
   "status": zod.enum(['accepted', 'rejected'])
 })
 
+export const updateConnectionResponseFromUserProfileCompletionMin = 0;
+export const updateConnectionResponseFromUserProfileCompletionMax = 100;
+
+export const updateConnectionResponseToUserProfileCompletionMin = 0;
+export const updateConnectionResponseToUserProfileCompletionMax = 100;
+
+
+
 export const UpdateConnectionResponse = zod.object({
   "id": zod.number(),
   "fromUserId": zod.number(),
@@ -219,12 +325,19 @@ export const UpdateConnectionResponse = zod.object({
   "name": zod.string(),
   "university": zod.string(),
   "bio": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "year": zod.string().nullish(),
+  "section": zod.string().nullish(),
+  "studentType": zod.union([zod.literal('hostel'),zod.literal('day_scholar'),zod.literal(null)]).nullish(),
+  "githubUrl": zod.string().nullish(),
+  "linkedinUrl": zod.string().nullish(),
   "interests": zod.array(zod.string()),
   "lookingFor": zod.array(zod.string()),
   "availability": zod.array(zod.string()),
   "goals": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "isOnline": zod.boolean(),
+  "profileCompletion": zod.number().min(updateConnectionResponseFromUserProfileCompletionMin).max(updateConnectionResponseFromUserProfileCompletionMax),
   "createdAt": zod.string()
 }).optional(),
   "toUser": zod.object({
@@ -232,12 +345,19 @@ export const UpdateConnectionResponse = zod.object({
   "name": zod.string(),
   "university": zod.string(),
   "bio": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "year": zod.string().nullish(),
+  "section": zod.string().nullish(),
+  "studentType": zod.union([zod.literal('hostel'),zod.literal('day_scholar'),zod.literal(null)]).nullish(),
+  "githubUrl": zod.string().nullish(),
+  "linkedinUrl": zod.string().nullish(),
   "interests": zod.array(zod.string()),
   "lookingFor": zod.array(zod.string()),
   "availability": zod.array(zod.string()),
   "goals": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "isOnline": zod.boolean(),
+  "profileCompletion": zod.number().min(updateConnectionResponseToUserProfileCompletionMin).max(updateConnectionResponseToUserProfileCompletionMax),
   "createdAt": zod.string()
 }).optional(),
   "createdAt": zod.string()
@@ -247,6 +367,11 @@ export const UpdateConnectionResponse = zod.object({
 /**
  * @summary List conversations for current user
  */
+export const listConversationsResponseOtherUserProfileCompletionMin = 0;
+export const listConversationsResponseOtherUserProfileCompletionMax = 100;
+
+
+
 export const ListConversationsResponseItem = zod.object({
   "id": zod.number(),
   "otherUser": zod.object({
@@ -254,12 +379,19 @@ export const ListConversationsResponseItem = zod.object({
   "name": zod.string(),
   "university": zod.string(),
   "bio": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "year": zod.string().nullish(),
+  "section": zod.string().nullish(),
+  "studentType": zod.union([zod.literal('hostel'),zod.literal('day_scholar'),zod.literal(null)]).nullish(),
+  "githubUrl": zod.string().nullish(),
+  "linkedinUrl": zod.string().nullish(),
   "interests": zod.array(zod.string()),
   "lookingFor": zod.array(zod.string()),
   "availability": zod.array(zod.string()),
   "goals": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "isOnline": zod.boolean(),
+  "profileCompletion": zod.number().min(listConversationsResponseOtherUserProfileCompletionMin).max(listConversationsResponseOtherUserProfileCompletionMax),
   "createdAt": zod.string()
 }),
   "lastMessage": zod.string().nullish(),
@@ -311,6 +443,11 @@ export const SendMessageResponse = zod.object({
 /**
  * @summary List notifications for current user
  */
+export const listNotificationsResponseActorProfileCompletionMin = 0;
+export const listNotificationsResponseActorProfileCompletionMax = 100;
+
+
+
 export const ListNotificationsResponseItem = zod.object({
   "id": zod.number(),
   "type": zod.enum(['connection_request', 'connection_accepted', 'message', 'match']),
@@ -322,12 +459,19 @@ export const ListNotificationsResponseItem = zod.object({
   "name": zod.string(),
   "university": zod.string(),
   "bio": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "year": zod.string().nullish(),
+  "section": zod.string().nullish(),
+  "studentType": zod.union([zod.literal('hostel'),zod.literal('day_scholar'),zod.literal(null)]).nullish(),
+  "githubUrl": zod.string().nullish(),
+  "linkedinUrl": zod.string().nullish(),
   "interests": zod.array(zod.string()),
   "lookingFor": zod.array(zod.string()),
   "availability": zod.array(zod.string()),
   "goals": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "isOnline": zod.boolean(),
+  "profileCompletion": zod.number().min(listNotificationsResponseActorProfileCompletionMin).max(listNotificationsResponseActorProfileCompletionMax),
   "createdAt": zod.string()
 }).optional(),
   "createdAt": zod.string()
@@ -350,6 +494,11 @@ export const MarkNotificationReadParams = zod.object({
   "id": zod.coerce.number()
 })
 
+export const markNotificationReadResponseActorProfileCompletionMin = 0;
+export const markNotificationReadResponseActorProfileCompletionMax = 100;
+
+
+
 export const MarkNotificationReadResponse = zod.object({
   "id": zod.number(),
   "type": zod.enum(['connection_request', 'connection_accepted', 'message', 'match']),
@@ -361,12 +510,19 @@ export const MarkNotificationReadResponse = zod.object({
   "name": zod.string(),
   "university": zod.string(),
   "bio": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "year": zod.string().nullish(),
+  "section": zod.string().nullish(),
+  "studentType": zod.union([zod.literal('hostel'),zod.literal('day_scholar'),zod.literal(null)]).nullish(),
+  "githubUrl": zod.string().nullish(),
+  "linkedinUrl": zod.string().nullish(),
   "interests": zod.array(zod.string()),
   "lookingFor": zod.array(zod.string()),
   "availability": zod.array(zod.string()),
   "goals": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "isOnline": zod.boolean(),
+  "profileCompletion": zod.number().min(markNotificationReadResponseActorProfileCompletionMin).max(markNotificationReadResponseActorProfileCompletionMax),
   "createdAt": zod.string()
 }).optional(),
   "createdAt": zod.string()
@@ -376,6 +532,11 @@ export const MarkNotificationReadResponse = zod.object({
 /**
  * @summary Get dashboard statistics and recent activity
  */
+export const getDashboardStatsResponseRecentMatchesItemProfileCompletionMin = 0;
+export const getDashboardStatsResponseRecentMatchesItemProfileCompletionMax = 100;
+
+
+
 export const GetDashboardStatsResponse = zod.object({
   "totalMatches": zod.number(),
   "pendingRequests": zod.number(),
@@ -386,12 +547,19 @@ export const GetDashboardStatsResponse = zod.object({
   "name": zod.string(),
   "university": zod.string(),
   "bio": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "year": zod.string().nullish(),
+  "section": zod.string().nullish(),
+  "studentType": zod.union([zod.literal('hostel'),zod.literal('day_scholar'),zod.literal(null)]).nullish(),
+  "githubUrl": zod.string().nullish(),
+  "linkedinUrl": zod.string().nullish(),
   "interests": zod.array(zod.string()),
   "lookingFor": zod.array(zod.string()),
   "availability": zod.array(zod.string()),
   "goals": zod.string().nullish(),
   "avatarUrl": zod.string().nullish(),
   "isOnline": zod.boolean(),
+  "profileCompletion": zod.number().min(getDashboardStatsResponseRecentMatchesItemProfileCompletionMin).max(getDashboardStatsResponseRecentMatchesItemProfileCompletionMax),
   "createdAt": zod.string()
 })),
   "activityByCategory": zod.array(zod.object({

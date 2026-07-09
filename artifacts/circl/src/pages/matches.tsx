@@ -3,16 +3,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user-avatar";
-import { MessageCircle, Check, X, MapPin } from "lucide-react";
+import { AlertCircle, MessageCircle, Check, X, MapPin } from "lucide-react";
 import { Link } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useGetMyProfile } from "@workspace/api-client-react";
 
 export default function Matches() {
-  const { data: pendingConnections, isLoading: pendingLoading, refetch: refetchPending } = useListConnections({ status: "pending" });
-  const { data: acceptedConnections, isLoading: acceptedLoading, refetch: refetchAccepted } = useListConnections({ status: "accepted" });
+  const { data: profile } = useGetMyProfile();
+  const { data: pendingConnections, isLoading: pendingLoading, isError: pendingError, refetch: refetchPending } = useListConnections({ status: "pending" });
+  const { data: acceptedConnections, isLoading: acceptedLoading, isError: acceptedError, refetch: refetchAccepted } = useListConnections({ status: "accepted" });
   const updateConnection = useUpdateConnection();
   const { toast } = useToast();
+  const incomingPendingConnections =
+    pendingConnections?.filter((conn) => conn.toUserId === profile?.id) ?? [];
 
   const handleUpdate = (id: number, status: 'accepted' | 'rejected') => {
     updateConnection.mutate({ id, data: { status } }, {
@@ -25,6 +29,7 @@ export default function Matches() {
   };
 
   const isLoading = pendingLoading || acceptedLoading;
+  const isError = pendingError || acceptedError;
 
   return (
     <div className="space-y-6">
@@ -40,9 +45,9 @@ export default function Matches() {
           <TabsTrigger value="matches">My Matches</TabsTrigger>
           <TabsTrigger value="pending">
             Pending 
-            {pendingConnections && pendingConnections.length > 0 && (
+            {incomingPendingConnections.length > 0 && (
               <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground font-bold">
-                {pendingConnections.length}
+                {incomingPendingConnections.length}
               </span>
             )}
           </TabsTrigger>
@@ -54,6 +59,19 @@ export default function Matches() {
               {[...Array(4)].map((_, i) => (
                 <Skeleton key={i} className="h-28 rounded-xl" />
               ))}
+            </div>
+          ) : isError ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="h-20 w-20 rounded-full bg-secondary flex items-center justify-center mb-6">
+                <AlertCircle className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h2 className="text-xl font-display font-bold">Could not load matches</h2>
+              <p className="text-muted-foreground mt-2 max-w-sm">
+                Try again in a moment.
+              </p>
+              <Button className="mt-6 rounded-full" variant="outline" onClick={() => refetchAccepted()}>
+                Retry
+              </Button>
             </div>
           ) : acceptedConnections && acceptedConnections.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2">
@@ -109,9 +127,17 @@ export default function Matches() {
                 <Skeleton key={i} className="h-36 rounded-xl" />
               ))}
             </div>
-          ) : pendingConnections && pendingConnections.length > 0 ? (
+          ) : isError ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
+              <AlertCircle className="h-10 w-10 mb-4 opacity-20" />
+              <p>Could not load pending requests.</p>
+              <Button className="mt-6 rounded-full" variant="outline" onClick={() => refetchPending()}>
+                Retry
+              </Button>
+            </div>
+          ) : incomingPendingConnections.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2">
-              {pendingConnections.map((conn) => {
+              {incomingPendingConnections.map((conn) => {
                 const user = conn.fromUser; // Only incoming requests in pending
                 if (!user) return null;
                 

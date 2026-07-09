@@ -1,12 +1,12 @@
 import { useGetDashboardStats } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, UserPlus, MessageCircle, Eye } from "lucide-react";
+import { AlertCircle, Users, UserPlus, MessageCircle, Eye } from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
 import { Link } from "wouter";
 
 export default function Dashboard() {
-  const { data: stats, isLoading } = useGetDashboardStats();
+  const { data: stats, isLoading, isError, refetch } = useGetDashboardStats();
 
   if (isLoading) {
     return (
@@ -18,6 +18,24 @@ export default function Dashboard() {
           ))}
         </div>
         <Skeleton className="h-[300px] rounded-xl w-full" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-display font-bold tracking-tight">Dashboard</h1>
+        <div className="flex flex-col items-center justify-center py-20 text-center bg-card rounded-2xl border shadow-sm">
+          <AlertCircle className="h-10 w-10 mb-4 text-muted-foreground" />
+          <h2 className="text-xl font-display font-bold">Could not load dashboard</h2>
+          <p className="text-muted-foreground mt-2 max-w-sm">
+            Try again in a moment.
+          </p>
+          <button className="text-primary hover:underline mt-4 text-sm font-medium" onClick={() => refetch()}>
+            Retry
+          </button>
+        </div>
       </div>
     );
   }

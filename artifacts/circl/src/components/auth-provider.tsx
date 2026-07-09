@@ -1,0 +1,126 @@
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import type { AuthError, Session, User } from "@supabase/supabase-js";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+
+type AuthContextValue = {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  isSupabaseConfigured: boolean;
+  session: Session | null;
+  user: User | null;
+  login: (email: string, password: string) => Promise<AuthError | null>;
+  signup: (
+    email: string,
+    password: string,
+    metadata: { name: string; university: string },
+  ) => Promise<AuthError | null>;
+  logout: () => Promise<AuthError | null>;
+};
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!supabase) {
+      setIsLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!isMounted) return;
+      setSession(data.session);
+      setIsLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setIsLoading(false);
+      if (!nextSession) {
+        queryClient.clear();
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [queryClient]);
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      isAuthenticated: Boolean(session),
+      isLoading,
+      isSupabaseConfigured,
+      session,
+      user: session?.user ?? null,
+      async login(email, password) {
+        if (!supabase) {
+          return {
+            name: "AuthConfigError",
+            message: "Supabase is not configured.",
+          } as AuthError;
+        }
+
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        return error;
+      },
+      async signup(email, password, metadata) {
+        if (!supabase) {
+          return {
+            name: "AuthConfigError",
+            message: "Supabase is not configured.",
+          } as AuthError;
+        }
+
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: metadata,
+          },
+        });
+        return error;
+      },
+      async logout() {
+        if (!supabase) return null;
+
+        const { error } = await supabase.auth.signOut();
+        if (!error) {
+          setSession(null);
+          queryClient.clear();
+        }
+        return error;
+      },
+    }),
+    [isLoading, queryClient, session],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used inside AuthProvider");
+  }
+  return context;
+}

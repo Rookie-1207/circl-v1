@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, Link } from "wouter";
-import { useGetMessages, getGetMessagesQueryKey, useSendMessage, useGetUserProfile, getGetUserProfileQueryKey, useListConversations } from "@workspace/api-client-react";
+import { useGetMessages, getGetMessagesQueryKey, useSendMessage, useGetUserProfile, getGetUserProfileQueryKey, useListConversations, useGetMyProfile } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/user-avatar";
-import { ArrowLeft, Send, Info } from "lucide-react";
+import { AlertCircle, ArrowLeft, Send, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
@@ -19,8 +19,9 @@ export default function Chat() {
   const { data: conversations } = useListConversations();
   const conversation = conversations?.find(c => c.id === conversationId);
   const otherUserId = conversation?.otherUser.id;
+  const { data: currentUser } = useGetMyProfile();
 
-  const { data: messages, isLoading, refetch } = useGetMessages(conversationId, {
+  const { data: messages, isLoading, isError, refetch } = useGetMessages(conversationId, {
     query: { refetchInterval: 5000, queryKey: getGetMessagesQueryKey(conversationId) } // Poll every 5s
   });
   
@@ -67,8 +68,29 @@ export default function Chat() {
     );
   }
 
-  // Hardcoded mock user id = 1
-  const CURRENT_USER_ID = 1;
+  if (isError) {
+    return (
+      <div className="flex flex-col h-[calc(100vh-140px)] md:h-[calc(100vh-80px)] bg-card rounded-2xl border shadow-sm overflow-hidden">
+        <div className="flex items-center gap-4 p-4 border-b bg-card">
+          <Link href="/conversations">
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+          <div className="h-16 w-16 bg-secondary rounded-full flex items-center justify-center mb-4">
+            <AlertCircle className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <h2 className="font-display font-bold text-lg">Could not load conversation</h2>
+          <p className="text-muted-foreground text-sm mt-2">Try again in a moment.</p>
+          <Button variant="outline" className="mt-6 rounded-full" onClick={() => refetch()}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] md:h-[calc(100vh-80px)] bg-card rounded-2xl border shadow-sm overflow-hidden">
@@ -118,7 +140,7 @@ export default function Chat() {
           </div>
         ) : (
           messages.map((msg, idx) => {
-            const isMe = msg.senderId === CURRENT_USER_ID;
+            const isMe = msg.senderId === currentUser?.id;
             const showTime = idx === 0 || 
               (new Date(msg.createdAt).getTime() - new Date(messages[idx-1].createdAt).getTime() > 5 * 60000);
               

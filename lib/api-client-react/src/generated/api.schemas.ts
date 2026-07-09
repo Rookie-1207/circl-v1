@@ -15,6 +15,18 @@ export interface UserProfile {
   university: string;
   /** @nullable */
   bio?: string | null;
+  /** @nullable */
+  department?: string | null;
+  /** @nullable */
+  year?: string | null;
+  /** @nullable */
+  section?: string | null;
+  /** @nullable */
+  studentType?: 'hostel' | 'day_scholar' | null;
+  /** @nullable */
+  githubUrl?: string | null;
+  /** @nullable */
+  linkedinUrl?: string | null;
   interests: string[];
   lookingFor: string[];
   availability: string[];
@@ -23,6 +35,7 @@ export interface UserProfile {
   /** @nullable */
   avatarUrl?: string | null;
   isOnline: boolean;
+  profileCompletion: number;
   createdAt: string;
 }
 
@@ -34,6 +47,12 @@ export interface DiscoverResult {
 export interface ProfileUpdate {
   name?: string;
   bio?: string;
+  department?: string;
+  year?: string;
+  section?: string;
+  studentType?: 'hostel' | 'day_scholar';
+  githubUrl?: string;
+  linkedinUrl?: string;
   interests?: string[];
   lookingFor?: string[];
   availability?: string[];
@@ -166,4 +185,3 @@ export const ListConnectionsStatus = {
   rejected: 'rejected',
   passed: 'passed',
 } as const;
-

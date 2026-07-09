@@ -5,10 +5,17 @@
  * Circl social networking API
  * OpenAPI spec version: 0.1.0
  */
+import type { ProfileUpdateStudentType } from './profileUpdateStudentType';
 
 export interface ProfileUpdate {
   name?: string;
   bio?: string;
+  department?: string;
+  year?: string;
+  section?: string;
+  studentType?: ProfileUpdateStudentType;
+  githubUrl?: string;
+  linkedinUrl?: string;
   interests?: string[];
   lookingFor?: string[];
   availability?: string[];

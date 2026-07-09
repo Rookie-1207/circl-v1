@@ -5,10 +5,21 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, Monitor, LogOut } from "lucide-react";
 import { useGetMyProfile } from "@workspace/api-client-react";
+import { useAuth } from "@/components/auth-provider";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { data: profile } = useGetMyProfile();
+  const { logout } = useAuth();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    const error = await logout();
+    if (error) {
+      toast({ title: error.message, variant: "destructive" });
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -102,8 +113,8 @@ export default function Settings() {
                 </div>
               </div>
             )}
-            <Button variant="destructive" className="w-full sm:w-auto" onClick={() => window.location.reload()}>
-              <LogOut className="h-4 w-4 mr-2" /> Log out (Mock refresh)
+            <Button variant="destructive" className="w-full sm:w-auto" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" /> Log out
             </Button>
           </CardContent>
         </Card>

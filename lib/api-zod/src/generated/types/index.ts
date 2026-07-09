@@ -25,5 +25,7 @@ export * from './messageInput';
 export * from './notification';
 export * from './notificationType';
 export * from './profileUpdate';
+export * from './profileUpdateStudentType';
 export * from './readAllResult';
 export * from './userProfile';
+export * from './userProfileStudentType';

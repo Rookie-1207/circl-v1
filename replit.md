@@ -32,8 +32,8 @@ A social networking app for college students to find gym partners, study groups,
 
 ## Architecture decisions
 
-- **Mock auth**: Authentication is not yet implemented. All API routes use `CURRENT_USER_ID = 1` as the mock current user. When auth is added, replace this with middleware that extracts the authenticated user from the session/token.
-- **Ownership checks**: Even with mock auth, all connection updates check that `toUserId === CURRENT_USER_ID`, and conversation message reads/writes verify conversation membership.
+- **Supabase Auth**: Protected API routes require `Authorization: Bearer <Supabase access token>`. The backend verifies JWT signature/issuer/audience, maps `sub` to `users.supabase_user_id`, and provisions a local profile on first login.
+- **Ownership checks**: Connection updates check the logged-in user is the recipient, and conversation message reads/writes verify conversation membership.
 - **Compatibility score**: Computed server-side in `GET /users` based on shared interests, lookingFor, and availability arrays between the current user and discovered users.
 - **Conversation creation**: Triggered automatically when a connection request is accepted (PATCH /connections/:id with status=accepted).
 - **OpenAPI-first**: The spec in `lib/api-spec/openapi.yaml` is the single source of truth. Run codegen after any spec changes.
@@ -57,7 +57,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 - After any `lib/api-spec/openapi.yaml` change, run codegen then `pnpm run typecheck:libs` before checking artifact types.
 - The DB schema uses `text().array()` for interests/lookingFor/availability — Drizzle `array()` must be a method call, not `array(text())`.
 - After changing `lib/db/src/schema/`, run `pnpm --filter @workspace/db run push` to apply DDL changes.
-- Mock `CURRENT_USER_ID = 1` is defined at the top of every route file — search for it when implementing real auth.
+- API auth requires `SUPABASE_URL`; set `SUPABASE_JWT_SECRET` too when using legacy HS256 Supabase tokens. Optional overrides: `SUPABASE_JWT_ISSUER`, `SUPABASE_JWT_AUDIENCE`.
 
 ## Pointers
 

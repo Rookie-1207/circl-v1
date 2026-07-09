@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, and, or } from "drizzle-orm";
 import { db, connectionsTable, usersTable, conversationsTable, notificationsTable } from "@workspace/db";
+import { formatUserProfile } from "../lib/userProfile";
 import {
   ListConnectionsQueryParams,
   ListConnectionsResponse,
@@ -12,19 +13,10 @@ import {
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
-const CURRENT_USER_ID = 1;
-
-function formatUser(u: typeof usersTable.$inferSelect) {
-  return {
-    ...u,
-    bio: u.bio ?? null,
-    goals: u.goals ?? null,
-    avatarUrl: u.avatarUrl ?? null,
-    createdAt: u.createdAt.toISOString(),
-  };
-}
 
 router.get("/connections", async (req, res): Promise<void> => {
+  const currentUserId = req.auth.userId;
+
   const params = ListConnectionsQueryParams.safeParse(req.query);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -39,8 +31,8 @@ router.get("/connections", async (req, res): Promise<void> => {
     .where(
       and(
         or(
-          eq(connectionsTable.fromUserId, CURRENT_USER_ID),
-          eq(connectionsTable.toUserId, CURRENT_USER_ID)
+          eq(connectionsTable.fromUserId, currentUserId),
+          eq(connectionsTable.toUserId, currentUserId)
         ),
         status ? eq(connectionsTable.status, status) : undefined
       )
@@ -61,8 +53,8 @@ router.get("/connections", async (req, res): Promise<void> => {
     fromUserId: c.fromUserId,
     toUserId: c.toUserId,
     status: c.status,
-    fromUser: c.fromUserId ? formatUser(userMap.get(c.fromUserId)!) : undefined,
-    toUser: c.toUserId ? formatUser(userMap.get(c.toUserId)!) : undefined,
+    fromUser: c.fromUserId ? formatUserProfile(userMap.get(c.fromUserId)!) : undefined,
+    toUser: c.toUserId ? formatUserProfile(userMap.get(c.toUserId)!) : undefined,
     createdAt: c.createdAt.toISOString(),
   }));
 
@@ -70,6 +62,8 @@ router.get("/connections", async (req, res): Promise<void> => {
 });
 
 router.post("/connections", async (req, res): Promise<void> => {
+  const currentUserId = req.auth.userId;
+
   const parsed = CreateConnectionBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -82,7 +76,7 @@ router.post("/connections", async (req, res): Promise<void> => {
   const [connection] = await db
     .insert(connectionsTable)
     .values({
-      fromUserId: CURRENT_USER_ID,
+      fromUserId: currentUserId,
       toUserId,
       status,
     })
@@ -93,20 +87,20 @@ router.post("/connections", async (req, res): Promise<void> => {
     const [fromUser] = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.id, CURRENT_USER_ID));
+      .where(eq(usersTable.id, currentUserId));
 
     await db.insert(notificationsTable).values({
       userId: toUserId,
       type: "connection_request",
       message: `${fromUser?.name ?? "Someone"} wants to connect with you`,
-      actorId: CURRENT_USER_ID,
+      actorId: currentUserId,
     });
   }
 
   const [fromUser] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.id, CURRENT_USER_ID));
+    .where(eq(usersTable.id, currentUserId));
 
   const [toUser] = await db
     .select()
@@ -119,14 +113,16 @@ router.post("/connections", async (req, res): Promise<void> => {
       fromUserId: connection.fromUserId,
       toUserId: connection.toUserId,
       status: connection.status,
-      fromUser: fromUser ? formatUser(fromUser) : undefined,
-      toUser: toUser ? formatUser(toUser) : undefined,
+      fromUser: fromUser ? formatUserProfile(fromUser) : undefined,
+      toUser: toUser ? formatUserProfile(toUser) : undefined,
       createdAt: connection.createdAt.toISOString(),
     })
   );
 });
 
 router.patch("/connections/:id", async (req, res): Promise<void> => {
+  const currentUserId = req.auth.userId;
+
   const pathParams = UpdateConnectionParams.safeParse(req.params);
   if (!pathParams.success) {
     res.status(400).json({ error: pathParams.error.message });
@@ -146,7 +142,7 @@ router.patch("/connections/:id", async (req, res): Promise<void> => {
     .where(
       and(
         eq(connectionsTable.id, pathParams.data.id),
-        eq(connectionsTable.toUserId, CURRENT_USER_ID)
+        eq(connectionsTable.toUserId, currentUserId)
       )
     )
     .returning();
@@ -185,7 +181,7 @@ router.patch("/connections/:id", async (req, res): Promise<void> => {
     const [acceptingUser] = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.id, CURRENT_USER_ID));
+      .where(eq(usersTable.id, currentUserId));
 
     await db.insert(notificationsTable).values({
       userId: connection.fromUserId,
@@ -211,8 +207,8 @@ router.patch("/connections/:id", async (req, res): Promise<void> => {
       fromUserId: connection.fromUserId,
       toUserId: connection.toUserId,
       status: connection.status,
-      fromUser: fromUser ? formatUser(fromUser) : undefined,
-      toUser: toUser ? formatUser(toUser) : undefined,
+      fromUser: fromUser ? formatUserProfile(fromUser) : undefined,
+      toUser: toUser ? formatUserProfile(toUser) : undefined,
       createdAt: connection.createdAt.toISOString(),
     })
   );
