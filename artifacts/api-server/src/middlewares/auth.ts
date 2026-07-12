@@ -167,26 +167,50 @@ function verifyHmacSignature(
   return timingSafeEqualString(expected, signature);
 }
 
+/**
+ * JWT ES256 signatures are raw R‖S (32 bytes each = 64 bytes for P-256).
+ * Node.js crypto.verify expects DER-encoded ASN.1 SEQUENCE { INTEGER r, INTEGER s }.
+ * This function converts the raw format to DER so Node can verify it.
+ */
+function ecJwtSignatureToDer(rawSig: Buffer): Buffer {
+  const half = rawSig.length / 2;
+  let r = rawSig.subarray(0, half);
+  let s = rawSig.subarray(half);
+
+  // Strip leading zeros but keep at least one byte; prepend 0x00 if high bit set
+  // (DER encodes integers as signed, so a leading 1-bit means "negative" without the pad)
+  while (r.length > 1 && r[0] === 0x00 && (r[1] & 0x80) === 0) r = r.subarray(1);
+  while (s.length > 1 && s[0] === 0x00 && (s[1] & 0x80) === 0) s = s.subarray(1);
+  if (r[0] & 0x80) r = Buffer.concat([Buffer.from([0x00]), r]);
+  if (s[0] & 0x80) s = Buffer.concat([Buffer.from([0x00]), s]);
+
+  // SEQUENCE { INTEGER r, INTEGER s }
+  const rEncoded = Buffer.concat([Buffer.from([0x02, r.length]), r]);
+  const sEncoded = Buffer.concat([Buffer.from([0x02, s.length]), s]);
+  const inner = Buffer.concat([rEncoded, sEncoded]);
+  return Buffer.concat([Buffer.from([0x30, inner.length]), inner]);
+}
+
 function verifyAsymmetricSignature(
   signingInput: string,
   signature: string,
   alg: string,
   jwk: Jwk,
 ): boolean {
-  const verifyAlgorithm =
-    alg === "RS256" ? "RSA-SHA256" : alg === "ES256" ? "SHA256" : null;
+  const key = crypto.createPublicKey({ key: jwk, format: "jwk" });
+  const rawSig = base64UrlDecode(signature);
 
-  if (!verifyAlgorithm) {
-    throw new Error(`Unsupported JWT algorithm: ${alg}`);
+  if (alg === "RS256") {
+    return crypto.verify("SHA256", Buffer.from(signingInput), key, rawSig);
   }
 
-  const key = crypto.createPublicKey({ key: jwk, format: "jwk" });
-  return crypto.verify(
-    verifyAlgorithm,
-    Buffer.from(signingInput),
-    key,
-    base64UrlDecode(signature),
-  );
+  if (alg === "ES256") {
+    // Convert raw R‖S to DER before verifying
+    const derSig = ecJwtSignatureToDer(rawSig);
+    return crypto.verify("SHA256", Buffer.from(signingInput), key, derSig);
+  }
+
+  throw new Error(`Unsupported JWT algorithm: ${alg}`);
 }
 
 function assertClaims(payload: SupabaseJwtPayload): asserts payload is SupabaseJwtPayload & { sub: string } {
