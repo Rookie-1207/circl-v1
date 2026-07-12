@@ -1,0 +1,421 @@
+You are a Staff Software Engineer, Senior Product Designer and Startup Founder.
+
+You are NOT rebuilding Circl.
+
+You are evolving it into a premium product.
+
+Do NOT remove existing functionality.
+
+Do NOT redesign the Dashboard.
+
+Do NOT break any backend APIs.
+
+Do NOT modify the current architecture unless necessary.
+
+The current application is already good.
+
+Your job is to add one flagship feature that becomes the identity of Circl.
+
+======================================================
+MAIN FEATURE
+======================================================
+
+Add a brand new page called
+
+🔥 Happening Now
+
+This should become the signature feature of Circl.
+
+Keep the current Dashboard exactly as it is.
+
+Simply add this as a new navigation item.
+
+======================================================
+PURPOSE
+======================================================
+
+The purpose of Happening Now is to answer one question:
+
+"What can I join right now?"
+
+Users should instantly discover activities happening nearby instead of searching through profiles.
+
+The experience should remove FOMO.
+
+Users should feel like they always know what's happening around them.
+
+======================================================
+DESIGN
+======================================================
+
+This page should feel premium.
+
+Minimal.
+
+Clean.
+
+Professional.
+
+Inspired by
+
+Apple
+
+Notion
+
+Linear
+
+Airbnb
+
+Spotify
+
+Arc Browser
+
+Lots of whitespace.
+
+Beautiful typography.
+
+Soft shadows.
+
+Elegant rounded cards.
+
+Smooth animations.
+
+No clutter.
+
+No overwhelming dashboard.
+
+======================================================
+TOP SECTION
+======================================================
+
+Show
+
+🔥 Happening Now
+
+Below it
+
+"Discover activities around you"
+
+Then a horizontal category selector.
+
+Examples
+
+🏋️ Gym
+
+📚 Study
+
+☕ Coffee
+
+🏏 Sports
+
+💻 Build
+
+🎮 Gaming
+
+🎬 Movies
+
+✈️ Travel
+
+🎵 Music
+
+🏸 Badminton
+
+🏃 Running
+
+Users can swipe horizontally.
+
+The selected category filters the feed.
+
+======================================================
+ACTIVITY CARDS
+======================================================
+
+Instead of user profile cards,
+
+show activity cards.
+
+Example
+
+────────────────────────────
+
+🏋️ Gym
+
+Today • 6:00 PM
+
+Gold's Gym
+
+2.1 km away
+
+Hosted by Alex
+
+2 / 4 joined
+
+[Join]
+
+────────────────────────────
+
+Or
+
+☕ Coffee
+
+Today • 5:30 PM
+
+Starbucks
+
+1.3 km away
+
+Hosted by Priya
+
+3 / 5 joined
+
+[Join]
+
+Cards should feel elegant.
+
+No unnecessary information.
+
+Everything visible within 2 seconds.
+
+======================================================
+CREATE ACTIVITY
+======================================================
+
+Add a floating "+" button.
+
+Users create an activity.
+
+Fields
+
+Activity
+
+Location
+
+Date
+
+Time
+
+Participants Needed
+
+Description
+
+Visibility
+
+Done.
+
+Creation should take less than 20 seconds.
+
+======================================================
+LOCATION
+======================================================
+
+Use the user's location.
+
+Sort activities by distance.
+
+Display
+
+Nearby
+
+500 m
+
+1.2 km
+
+5 km
+
+Do NOT make maps the main experience.
+
+Maps only appear inside activity details.
+
+======================================================
+JOIN FLOW
+======================================================
+
+Tap Join.
+
+Host receives request.
+
+Host accepts.
+
+Then chat opens automatically.
+
+======================================================
+FILTERS
+======================================================
+
+Distance
+
+Today
+
+Tomorrow
+
+This Week
+
+Activity Type
+
+Open Spots
+
+Indoor
+
+Outdoor
+
+Keep filters simple.
+
+======================================================
+LOGIN
+======================================================
+
+Do NOT require college email.
+
+Support
+
+Google Login
+
+Apple Login
+
+Email
+
+Phone
+
+University becomes optional.
+
+======================================================
+PROFILE
+======================================================
+
+Keep minimal.
+
+Photo
+
+Bio
+
+Interests
+
+Availability
+
+University
+
+Nothing more.
+
+======================================================
+KEEP EXISTING FEATURES
+======================================================
+
+Keep existing
+
+Dashboard
+
+Discover
+
+Matches
+
+Chat
+
+Notifications
+
+Profile
+
+Settings
+
+Authentication
+
+Supabase
+
+Database
+
+Backend APIs
+
+Do not remove anything.
+
+======================================================
+UI QUALITY
+======================================================
+
+Everything should feel premium.
+
+No visual clutter.
+
+No unnecessary colors.
+
+No fake statistics.
+
+No giant dashboards.
+
+Elegant spacing.
+
+Excellent typography.
+
+Micro animations.
+
+Glass effects only where appropriate.
+
+Skeleton loading.
+
+Responsive.
+
+======================================================
+PERFORMANCE
+======================================================
+
+Lazy loading
+
+Optimistic updates
+
+Pagination
+
+Caching
+
+Debouncing
+
+======================================================
+CODE QUALITY
+======================================================
+
+No duplicate code.
+
+Respect existing architecture.
+
+Respect TypeScript types.
+
+Keep components reusable.
+
+Maintain production quality.
+
+======================================================
+FUTURE READY
+======================================================
+
+Design the database so future features can be added:
+
+Communities
+
+Events
+
+Premium
+
+Leaderboards
+
+Badges
+
+Organization pages
+
+======================================================
+MISSION
+======================================================
+
+Do not build another social network.
+
+Build the easiest way for people to discover and join real-life activities.
+
+The app should feel calm, premium and effortless.
+
+Every screen should answer exactly one question.
+
+Before implementing any feature ask:
+
+"Does this reduce friction?"
+
+If the answer is no,
+
+do not build it.
+
+Every addition must make Circl feel more premium, more useful and more memorable.

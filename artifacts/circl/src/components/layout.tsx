@@ -7,6 +7,7 @@ import {
   Bell,
   User,
   Settings,
+  Flame,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useListNotifications, useListConversations } from "@workspace/api-client-react";
@@ -24,6 +25,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/" },
+    { icon: Flame, label: "Happening", href: "/happening-now" },
     { icon: Search, label: "Discover", href: "/discover" },
     { icon: Users, label: "Matches", href: "/matches" },
     {

@@ -20,6 +20,7 @@ import Notifications from '@/pages/notifications';
 import Settings from '@/pages/settings';
 import NotFound from '@/pages/not-found';
 import Login from '@/pages/login';
+import HappeningNow from '@/pages/happening-now';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +46,7 @@ function ProtectedRoutes() {
         <Route path="/" component={RedirectToDashboard} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/discover" component={Discover} />
+        <Route path="/happening-now" component={HappeningNow} />
         <Route path="/matches" component={Matches} />
         <Route path="/conversations" component={Conversations} />
         <Route path="/conversations/:id" component={Chat} />
