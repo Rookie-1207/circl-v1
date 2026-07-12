@@ -12,6 +12,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -474,7 +475,7 @@ export default function Profile() {
             
             {/* Interests */}
             <div className="space-y-3">
-              <FormLabel>Interests</FormLabel>
+              <Label>Interests</Label>
               <div className="flex flex-wrap gap-2">
                 {interests.map(interest => (
                   <Badge key={interest} variant="secondary" className="px-3 py-1 text-sm">
@@ -506,7 +507,7 @@ export default function Profile() {
 
             {/* Looking For */}
             <div className="space-y-3">
-              <FormLabel>Looking For</FormLabel>
+              <Label>Looking For</Label>
               <div className="flex flex-wrap gap-2">
                 {lookingFor.map(item => (
                   <Badge key={item} variant="outline" className="px-3 py-1 text-sm border-primary/30 bg-primary/5 text-primary">
@@ -538,7 +539,7 @@ export default function Profile() {
 
             {/* Availability */}
             <div className="space-y-3">
-              <FormLabel>Availability</FormLabel>
+              <Label>Availability</Label>
               <div className="flex flex-wrap gap-2">
                 {availability.map(item => (
                   <Badge key={item} variant="outline" className="px-3 py-1 text-sm">
