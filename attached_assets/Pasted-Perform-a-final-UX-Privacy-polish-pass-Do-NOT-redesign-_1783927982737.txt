@@ -1,0 +1,127 @@
+Perform a final UX & Privacy polish pass.
+
+Do NOT redesign the application.
+Do NOT change the backend.
+Do NOT modify business logic.
+
+Only improve user trust, privacy, and polish.
+
+=========================
+1. Hide Internal IDs
+=========================
+
+Remove all internal database IDs, UUIDs, Supabase IDs, or user IDs from any user-facing screens.
+
+The Settings page should never display internal identifiers.
+
+Users should only see information that is meaningful to them.
+
+If an ID is needed for debugging, keep it in the backend only.
+
+=========================
+2. Privacy Notice
+=========================
+
+On the Login and Sign Up pages, add a small, elegant privacy note below the authentication form.
+
+Example:
+
+🔒 Your privacy matters.
+We never sell your personal information. Your data is securely encrypted and used only to provide the Circl experience.
+
+Keep the design subtle.
+
+Small typography.
+
+Muted color.
+
+Not intrusive.
+
+Professional.
+
+=========================
+3. Trust Indicators
+=========================
+
+Add subtle trust elements such as:
+
+• Secure Authentication
+• Encrypted Connection
+• Privacy First
+
+Do NOT overdo it.
+
+Keep them minimal and elegant.
+
+=========================
+4. Improve Settings Page
+=========================
+
+The Settings page should only contain useful user settings.
+
+Remove any developer-facing information.
+
+Remove technical IDs.
+
+Remove anything that looks like debugging information.
+
+Settings should feel like a premium consumer app.
+
+=========================
+5. Error Messages
+=========================
+
+Replace technical error messages with friendly ones.
+
+Example:
+
+Instead of:
+
+"JWT expired"
+
+Use:
+
+"Your session has expired. Please sign in again."
+
+Instead of:
+
+"Network Error"
+
+Use:
+
+"Couldn't connect right now. Please try again."
+
+=========================
+6. Loading States
+=========================
+
+Ensure every page has a clean loading state.
+
+Avoid blank screens.
+
+Use subtle skeleton loaders where appropriate.
+
+=========================
+7. Empty States
+=========================
+
+Replace generic empty screens with helpful messages.
+
+Example:
+
+"No activities yet."
+
+→
+
+"No activities nearby yet.
+Be the first to create one!"
+
+=========================
+8. Final Review
+=========================
+
+Review the entire application for anything that feels like developer tooling instead of a polished consumer product.
+
+Remove any remaining technical text exposed to users.
+
+Keep the application clean, trustworthy, and production-ready.

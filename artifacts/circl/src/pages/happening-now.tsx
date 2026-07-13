@@ -481,7 +481,7 @@ function CreateActivitySheet({
       onCreated();
     } catch (err) {
       toast({
-        title: (err as Error).message,
+        title: 'Something went wrong. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -707,7 +707,7 @@ export default function HappeningNow() {
       {/* Feed */}
       {error ? (
         <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-center">
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-sm text-destructive">Couldn't load activities right now. Please try again.</p>
           <Button variant="ghost" size="sm" className="mt-3" onClick={refetch}>
             Try again
           </Button>

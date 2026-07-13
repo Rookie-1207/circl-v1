@@ -189,7 +189,7 @@ export default function Profile() {
 
     if (error) {
       setIsUploadingPhoto(false);
-      toast({ title: error.message, variant: "destructive" });
+      toast({ title: "Couldn't upload your photo. Please try a smaller image or different file.", variant: "destructive" });
       return;
     }
 

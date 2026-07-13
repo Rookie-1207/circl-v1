@@ -167,7 +167,8 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-                <p>No activity data available yet.</p>
+                <p className="font-medium text-sm">No campus activities yet.</p>
+                <p className="text-xs mt-1">Create the first one in Happening Now!</p>
               </div>
             )}
           </CardContent>

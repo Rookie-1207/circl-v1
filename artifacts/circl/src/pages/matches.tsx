@@ -21,7 +21,7 @@ export default function Matches() {
   const handleUpdate = (id: number, status: 'accepted' | 'rejected') => {
     updateConnection.mutate({ id, data: { status } }, {
       onSuccess: () => {
-        toast({ title: `Connection ${status}` });
+        toast({ title: status === 'accepted' ? 'Connection accepted! 🎉' : 'Request declined.' });
         refetchPending();
         refetchAccepted();
       }

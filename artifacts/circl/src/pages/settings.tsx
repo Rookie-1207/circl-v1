@@ -103,13 +103,15 @@ export default function Settings() {
           </CardHeader>
           <CardContent className="space-y-4">
             {profile && (
-              <div className="bg-secondary/50 p-4 rounded-lg flex items-center justify-between mb-4">
-                <div>
-                  <p className="font-medium text-sm">Logged in as</p>
-                  <p className="text-muted-foreground text-sm">{profile.name}</p>
+              <div className="bg-secondary/50 p-4 rounded-lg flex items-center gap-3 mb-4">
+                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <span className="text-sm font-bold text-primary">
+                    {profile.name.charAt(0).toUpperCase()}
+                  </span>
                 </div>
-                <div className="text-xs font-mono bg-background px-2 py-1 rounded border">
-                  ID: {profile.id}
+                <div>
+                  <p className="font-medium text-sm">{profile.name}</p>
+                  <p className="text-muted-foreground text-xs">Account in good standing</p>
                 </div>
               </div>
             )}
