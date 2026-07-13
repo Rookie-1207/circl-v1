@@ -145,6 +145,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
           <span className="sr-only">Profile</span>
         </Link>
+
+        {/* Mobile Settings Link — was previously dropped by slice(0, 5) above,
+            leaving mobile users with no way to reach /settings at all. */}
+        <Link
+          href="/settings"
+          className={cn(
+            "relative flex flex-col items-center p-2 text-xs font-medium transition-colors",
+            location === "/settings" ? "text-primary" : "text-muted-foreground"
+          )}
+        >
+          <div
+            className={cn(
+              "mb-1 flex h-10 w-10 items-center justify-center rounded-full transition-all",
+              location === "/settings" ? "bg-primary/10" : "bg-transparent"
+            )}
+          >
+            <Settings className="h-5 w-5" />
+          </div>
+          <span className="sr-only">Settings</span>
+        </Link>
       </nav>
     </div>
   );
