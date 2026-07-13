@@ -1,0 +1,66 @@
+Summary of root causes
+
+TypeScript project-reference / declaration mismatch: TS6305 shows api-server is importing types from built packages (lib/db and lib/api-zod) but their output .d.ts files weren't produced before api-server typechecking. Build / project-reference ordering in CI is incorrect.
+Many TS7006 / TS7031 "implicitly has an 'any' type" errors in route files. These are real TypeScript errors (missing parameter typings) that need source fixes (or a deliberate tsconfig change) — they will continue to fail typecheck until fixed.
+Concrete, minimal fixes
+
+Ensure dependent packages are built before typechecking api-server Add a step in .github/workflows/ci.yml to build the workspace packages that api-server depends on (at least @workspace/db and @workspace/api-zod) before running the api-server typecheck. This resolves TS6305 by producing the referenced declaration files.
+Patch suggestion (replace or insert around the Typecheck — API server step):
+
+Replace current sequence:
+Typecheck — API server
+Typecheck — Web app
+Typecheck — DB ...
+With (example snippet to insert before api-server typecheck):
+
+name: Build — DB and api-zod (needed for api-server typecheck) run: | pnpm --filter @workspace/db run build pnpm --filter @workspace/api-zod run build
+
+name: Typecheck — API server run: pnpm --filter @workspace/api-server run typecheck
+
+Or if you prefer to keep typechecks and ensure build order, insert the Build step right before Typecheck — API server.
+
+Rationale: api-server uses types emitted by the db and api-zod packages. Those .d.ts files must exist or TypeScript will fail with TS6305.
+
+Reproduce locally and verify Run these locally in repository root to reproduce and confirm the fix:
+pnpm --filter @workspace/db run build
+pnpm --filter @workspace/api-zod run build
+pnpm --filter @workspace/api-server run typecheck
+If that succeeds, your CI ordering fix should also pass.
+
+Fix the implicit-any source errors You must add proper type annotations in the reported files (routes/activities.ts, connections.ts, conversations.ts, dashboard.ts, notifications.ts, users.ts, and any middlewares). A few general patterns and examples:
+Route handlers Before: router.get('/', async (req, res) => { ... })
+After: import type { Request, Response, NextFunction } from 'express'
+
+router.get('/', async (req: Request, res: Response, next: NextFunction) => { ... })
+
+Array callbacks / map/filter/reduce Before: items.map(a => doSomething(a))
+After: items.map((a: Activity) => doSomething(a))
+
+Destructured binding elements Before: const { _s, _d } = payload
+After (example with types): const { _s, _d }: { _s: string; _d: Date } = payload
+
+Generic parameters returned by database layer Use the exported types from your db/api-zod packages where applicable, e.g.: import type { UserRecord, ActivityRecord } from '@workspace/db' items.map((a: ActivityRecord) => ...)
+If you need a quick temporary bypass (not recommended long-term), you can relax the rule in tsconfig.json by setting "noImplicitAny": false in api-server/tsconfig.json — but it's better to add explicit types so the code stays correctly typed.
+
+If you use TypeScript project references If your repository uses project references (composite builds), ensure:
+Each referenced package has "composite": true and emits declarations.
+CI builds referenced projects (pnpm --filter ... run build) before depending projects are typechecked. Alternatively, run a workspace-wide build: pnpm -w -r run build (but this may be slower than building only the needed packages).
+Optional: workspace-wide typecheck in correct dependency order You can also change the CI to typecheck the whole workspace in order, which will enforce building references in the right order. Example:
+name: Typecheck — all workspaces run: pnpm -w -r run typecheck
+But this requires each package's "typecheck" script to be configured to respect project references. The targeted build-before-typecheck approach is more surgical.
+
+Example full CI adjustment (diff-like) Insert this step before the "Typecheck — API server" step:
+
+name: Build — DB and api-zod (dependencies for api-server) run: | pnpm --filter @workspace/db run build pnpm --filter @workspace/api-zod run build
+And keep the Typecheck — DB step if you want to typecheck the db package separately later.
+
+Next steps I recommend you apply
+
+Update .github/workflows/ci.yml with the Build step above and push a commit/PR to trigger CI.
+While CI runs, open the listed files with TS7006/TS7031 errors and add explicit parameter types. Example quick fixes:
+routes/*.ts: give map callbacks and handler parameters explicit types (Request/Response/NextFunction or project-specific types).
+Re-run the typecheck locally using the reproduce commands above until all errors clear.
+If you want, I can:
+
+Prepare an exact commit patch for .github/workflows/ci.yml with the Build step added.
+Suggest concrete type annotations for a specific file if you paste its contents (for example src/routes/activities.ts) so I can provide exact edits to fix the implicit-any errors.

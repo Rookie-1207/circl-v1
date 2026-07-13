@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/components/auth-provider";
+import { getAuthRedirectUrl } from "@/lib/supabase";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -39,8 +40,7 @@ export default function ForgotPassword() {
     setError(null);
     setIsSubmitting(true);
 
-    const redirectTo = `${window.location.origin}${import.meta.env.BASE_URL}reset-password`.replace(/\/+/g, "/").replace(":/", "://");
-    const err = await resetPassword(email, redirectTo);
+    const err = await resetPassword(email, getAuthRedirectUrl("reset-password"));
     setIsSubmitting(false);
 
     if (err) {
