@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, or } from "drizzle-orm";
+import { eq, or, not, inArray, ilike, and, sql } from "drizzle-orm";
 import { db, usersTable, connectionsTable } from "@workspace/db";
 import { z } from "zod";
 import {
@@ -65,9 +65,7 @@ router.get("/users/me", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json(
-    GetMyProfileResponse.parse(formatUserProfile(user))
-  );
+  res.json(GetMyProfileResponse.parse(formatUserProfile(user)));
 });
 
 router.patch("/users/me", async (req, res): Promise<void> => {
@@ -90,9 +88,7 @@ router.patch("/users/me", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json(
-    UpdateMyProfileResponse.parse(formatUserProfile(updated))
-  );
+  res.json(UpdateMyProfileResponse.parse(formatUserProfile(updated)));
 });
 
 router.get("/users", async (req, res): Promise<void> => {
@@ -113,8 +109,8 @@ router.get("/users", async (req, res): Promise<void> => {
     .where(
       or(
         eq(connectionsTable.fromUserId, currentUserId),
-        eq(connectionsTable.toUserId, currentUserId)
-      )
+        eq(connectionsTable.toUserId, currentUserId),
+      ),
     );
 
   const excludedIds = new Set<number>([currentUserId]);
@@ -123,39 +119,37 @@ router.get("/users", async (req, res): Promise<void> => {
     excludedIds.add(conn.toUserId);
   }
 
-  let users = await db.select().from(usersTable);
+  // Build SQL-level conditions to avoid loading records we'll immediately discard
+  const conditions = [
+    not(inArray(usersTable.id, Array.from(excludedIds))),
+    ...(search
+      ? [
+          or(
+            ilike(usersTable.name, `%${search}%`),
+            ilike(usersTable.university, `%${search}%`),
+            ilike(sql`coalesce(${usersTable.bio}, '')`, `%${search}%`),
+          ),
+        ]
+      : []),
+    ...(university ? [ilike(usersTable.university, `%${university}%`)] : []),
+  ];
 
-  // Filter out current user and existing connections
-  users = users.filter((u) => !excludedIds.has(u.id));
+  let users = await db
+    .select()
+    .from(usersTable)
+    .where(and(...conditions))
+    .limit(500); // prevent unbounded scans; pagination can be added in a future iteration
 
-  // Apply search filter
-  if (search) {
-    const lower = search.toLowerCase();
-    users = users.filter(
-      (u) =>
-        u.name.toLowerCase().includes(lower) ||
-        u.university.toLowerCase().includes(lower) ||
-        (u.bio?.toLowerCase().includes(lower) ?? false)
-    );
-  }
-
-  // Apply university filter
-  if (university) {
-    users = users.filter((u) =>
-      u.university.toLowerCase().includes(university.toLowerCase())
-    );
-  }
-
-  // Apply category filter (match against lookingFor)
+  // Apply category filter (matches against lookingFor array — kept in memory as SQL array-contains
+  // varies by driver; the result set is already bounded by the limit above)
   if (category) {
+    const lowerCategory = category.toLowerCase();
     users = users.filter((u) =>
-      u.lookingFor.some((lf: string) =>
-        lf.toLowerCase().includes(category.toLowerCase())
-      )
+      u.lookingFor.some((lf: string) => lf.toLowerCase().includes(lowerCategory)),
     );
   }
 
-  // Compute compatibility score based on shared interests and lookingFor
+  // Fetch current user once for compatibility scoring
   const [currentUser] = await db
     .select()
     .from(usersTable)
@@ -165,17 +159,17 @@ router.get("/users", async (req, res): Promise<void> => {
     let score = 30; // base score
     if (currentUser) {
       const sharedInterests = u.interests.filter((i: string) =>
-        currentUser.interests.includes(i)
+        currentUser.interests.includes(i),
       ).length;
       const sharedLookingFor = u.lookingFor.filter((lf: string) =>
-        currentUser.lookingFor.includes(lf)
+        currentUser.lookingFor.includes(lf),
       ).length;
       const sharedAvailability = u.availability.filter((a: string) =>
-        currentUser.availability.includes(a)
+        currentUser.availability.includes(a),
       ).length;
       score = Math.min(
         100,
-        30 + sharedInterests * 15 + sharedLookingFor * 20 + sharedAvailability * 10
+        30 + sharedInterests * 15 + sharedLookingFor * 20 + sharedAvailability * 10,
       );
     }
 
@@ -208,9 +202,7 @@ router.get("/users/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json(
-    GetUserProfileResponse.parse(formatUserProfile(user))
-  );
+  res.json(GetUserProfileResponse.parse(formatUserProfile(user)));
 });
 
 export default router;

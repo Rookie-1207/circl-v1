@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: Install · Typecheck · Build · Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck — API server
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Typecheck — Web app
+        run: pnpm --filter @workspace/circl run typecheck
+
+      - name: Typecheck — DB
+        run: pnpm --filter @workspace/db run typecheck
+
+      - name: Build — API server
+        run: pnpm --filter @workspace/api-server run build
+
+      - name: Build — Web app
+        run: pnpm --filter @workspace/circl run build
+        env:
+          # Vite requires these to be present at build time even if empty
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'placeholder' }}
+          PORT: 3000
+          BASE_PATH: /
+
+      - name: Test — API server
+        run: pnpm --filter @workspace/api-server run test
+        env:
+          # Tests that hit auth middleware don't need real credentials, but the
+          # startup validation in index.ts requires these to be present.
+          PORT: 8080
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
+          SUPABASE_URL: https://placeholder.supabase.co
+          SUPABASE_JWT_SECRET: test-secret-for-ci-only

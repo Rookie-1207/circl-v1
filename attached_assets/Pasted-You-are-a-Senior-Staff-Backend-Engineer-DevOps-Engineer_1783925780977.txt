@@ -1,0 +1,242 @@
+You are a Senior Staff Backend Engineer, DevOps Engineer, and Security Engineer.
+
+The application is feature-complete.
+
+DO NOT redesign the UI.
+DO NOT change the UX.
+DO NOT remove any features.
+DO NOT break existing APIs.
+
+Your only goal is to make this application production-ready for real users.
+
+====================================================
+TASK
+====================================================
+
+Perform a complete production readiness audit.
+
+First inspect the entire project.
+
+Identify security issues, deployment issues, performance problems, and missing production features.
+
+Before changing anything, explain what you found.
+
+Then implement only production improvements.
+
+====================================================
+SECURITY
+====================================================
+
+Add or verify:
+
+- Helmet
+- Proper CORS configuration
+- Rate limiting on all API endpoints
+- Request size limits
+- Secure HTTP headers
+- Environment variable validation
+- Input validation everywhere
+- SQL injection protection
+- XSS protection
+- Proper authentication checks
+- Proper authorization checks
+- Secure error responses
+- Prevent stack traces in production
+- Remove console.log from production code
+- Proper logging with Pino
+- Request ID generation
+- Health endpoint
+
+====================================================
+SUPABASE
+====================================================
+
+Verify
+
+- JWT validation
+- Secure session handling
+- Proper role usage
+- Service Role Key never exposed to frontend
+- Row Level Security compatibility
+- Proper database permissions
+
+====================================================
+DATABASE
+====================================================
+
+Inspect database.
+
+Check
+
+Indexes
+
+Foreign keys
+
+Cascade rules
+
+Unique constraints
+
+Performance
+
+Migration consistency
+
+====================================================
+API
+====================================================
+
+Check every endpoint.
+
+Verify
+
+Authentication
+
+Authorization
+
+Validation
+
+Error handling
+
+HTTP status codes
+
+Consistency
+
+====================================================
+PERFORMANCE
+====================================================
+
+Optimize
+
+Lazy loading
+
+Caching
+
+Pagination
+
+Optimistic updates
+
+Image optimization
+
+Bundle size
+
+Database queries
+
+N+1 query issues
+
+====================================================
+CODE QUALITY
+====================================================
+
+Remove dead code.
+
+Remove duplicated code.
+
+Remove unused imports.
+
+Refactor only where beneficial.
+
+Keep existing architecture.
+
+====================================================
+MONITORING
+====================================================
+
+Prepare the application for
+
+Sentry
+
+Better Stack
+
+PostHog
+
+Do not configure credentials.
+
+Only integrate the libraries and create placeholders.
+
+====================================================
+DEPLOYMENT
+====================================================
+
+Verify the project can be deployed on
+
+Vercel
+
+Railway
+
+Supabase
+
+Generate
+
+Dockerfile
+
+.dockerignore
+
+Health checks
+
+Production scripts
+
+Environment variable documentation
+
+README deployment guide
+
+====================================================
+CI/CD
+====================================================
+
+Create GitHub Actions workflow.
+
+On every push:
+
+Install
+
+Typecheck
+
+Lint
+
+Build
+
+Fail if anything breaks
+
+====================================================
+TESTING
+====================================================
+
+Add basic tests for
+
+Authentication
+
+Health endpoint
+
+Critical APIs
+
+Do not write unnecessary tests.
+
+====================================================
+IMPORTANT
+====================================================
+
+Never expose secrets.
+
+Never commit .env.
+
+Never change business logic.
+
+Never redesign the UI.
+
+Keep everything backward compatible.
+
+====================================================
+OUTPUT
+====================================================
+
+Before changing code, provide:
+
+1. Security Audit
+2. Performance Audit
+3. Production Readiness Score
+4. List of issues
+
+Then fix them one by one.
+
+Run build and typecheck after every major change.
+
+Do not stop until the project is production-ready.

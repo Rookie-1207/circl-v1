@@ -1,0 +1,30 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+**/dist
+**/.turbo
+
+# Dev files
+**/*.log
+**/.env
+**/.env.*
+!**/.env.example
+
+# Editor / OS
+.git
+.gitignore
+**/.DS_Store
+**/*.local
+
+# Test files
+**/src/tests
+**/*.test.ts
+**/*.spec.ts
+
+# Replit-specific
+.replit
+replit.nix
+.local/
+attached_assets/
