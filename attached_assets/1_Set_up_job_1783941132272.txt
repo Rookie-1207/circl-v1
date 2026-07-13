@@ -1,0 +1,33 @@
+﻿2026-07-13T11:02:15.5218110Z Current runner version: '2.335.1'
+2026-07-13T11:02:15.5249870Z ##[group]Runner Image Provisioner
+2026-07-13T11:02:15.5251176Z Hosted Compute Agent
+2026-07-13T11:02:15.5251882Z Version: 20260624.560
+2026-07-13T11:02:15.5252692Z Commit: 925d229a51159bc391ae97e54a2dd1fe20af789d
+2026-07-13T11:02:15.5253628Z Build Date: 2026-06-24T18:26:47Z
+2026-07-13T11:02:15.5254471Z Worker ID: {4d0bfb8d-e513-44df-930b-a14f6c6330f8}
+2026-07-13T11:02:15.5255477Z Azure Region: northcentralus
+2026-07-13T11:02:15.5256208Z ##[endgroup]
+2026-07-13T11:02:15.5257634Z ##[group]Operating System
+2026-07-13T11:02:15.5258517Z Ubuntu
+2026-07-13T11:02:15.5259170Z 24.04.4
+2026-07-13T11:02:15.5259834Z LTS
+2026-07-13T11:02:15.5260487Z ##[endgroup]
+2026-07-13T11:02:15.5261362Z ##[group]Runner Image
+2026-07-13T11:02:15.5262174Z Image: ubuntu-24.04
+2026-07-13T11:02:15.5262871Z Version: 20260705.232.1
+2026-07-13T11:02:15.5264146Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260705.232/images/ubuntu/Ubuntu2404-Readme.md
+2026-07-13T11:02:15.5266445Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260705.232
+2026-07-13T11:02:15.5267320Z ##[endgroup]
+2026-07-13T11:02:15.5268272Z ##[group]GITHUB_TOKEN Permissions
+2026-07-13T11:02:15.5270140Z Contents: read
+2026-07-13T11:02:15.5270635Z Metadata: read
+2026-07-13T11:02:15.5271295Z Packages: read
+2026-07-13T11:02:15.5271800Z ##[endgroup]
+2026-07-13T11:02:15.5273479Z Secret source: Actions
+2026-07-13T11:02:15.5274436Z Prepare workflow directory
+2026-07-13T11:02:15.5571786Z Prepare all required actions
+2026-07-13T11:02:15.5614906Z Getting action download info
+2026-07-13T11:02:15.7805421Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+2026-07-13T11:02:15.9177915Z Download action repository 'pnpm/action-setup@v4' (SHA:b906affcce14559ad1aafd4ab0e942779e9f58b1)
+2026-07-13T11:02:16.2947186Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-07-13T11:02:16.5213795Z Complete job name: Install · Typecheck · Build · Test

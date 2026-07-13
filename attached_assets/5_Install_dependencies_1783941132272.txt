@@ -1,0 +1,32 @@
+﻿2026-07-13T11:02:20.6162388Z ##[group]Run pnpm install --frozen-lockfile
+2026-07-13T11:02:20.6162790Z [36;1mpnpm install --frozen-lockfile[0m
+2026-07-13T11:02:20.7207514Z shell: /usr/bin/bash -e {0}
+2026-07-13T11:02:20.7207816Z env:
+2026-07-13T11:02:20.7208067Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+2026-07-13T11:02:20.7208345Z ##[endgroup]
+2026-07-13T11:02:21.0869580Z Scope: all 9 workspace projects
+2026-07-13T11:02:21.8454363Z ? Verifying lockfile against supply-chain policies (580 entries)...
+2026-07-13T11:02:21.8550390Z Lockfile is up to date, resolution step is skipped
+2026-07-13T11:02:21.9380069Z Progress: resolved 1, reused 0, downloaded 0, added 0
+2026-07-13T11:02:22.0078883Z Packages: +578
+2026-07-13T11:02:22.0079579Z ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+2026-07-13T11:02:22.9439098Z Progress: resolved 578, reused 0, downloaded 35, added 0
+2026-07-13T11:02:23.9549751Z Progress: resolved 578, reused 0, downloaded 192, added 12
+2026-07-13T11:02:24.9652404Z Progress: resolved 578, reused 0, downloaded 413, added 28
+2026-07-13T11:02:25.6262677Z ✓ Lockfile passes supply-chain policies (580 entries in 3.7s)
+2026-07-13T11:02:25.9652433Z Progress: resolved 578, reused 0, downloaded 501, added 36
+2026-07-13T11:02:26.8814330Z Progress: resolved 578, reused 0, downloaded 578, added 578, done
+2026-07-13T11:02:27.3714865Z 
+2026-07-13T11:02:27.3715665Z dependencies:
+2026-07-13T11:02:27.3716087Z + @replit/connectors-sdk 0.4.1
+2026-07-13T11:02:27.3716324Z 
+2026-07-13T11:02:27.3716453Z devDependencies:
+2026-07-13T11:02:27.3716717Z + prettier 3.9.4
+2026-07-13T11:02:27.3716989Z + typescript 5.9.3
+2026-07-13T11:02:27.3717186Z 
+2026-07-13T11:02:27.3858117Z . preinstall$ sh -c 'rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) echo "Use pnpm instead" >&2; exit 1 ;; esac'
+2026-07-13T11:02:27.4033726Z . preinstall: Done
+2026-07-13T11:02:27.4745685Z [ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.27.3
+2026-07-13T11:02:27.4746161Z 
+2026-07-13T11:02:27.4746766Z Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+2026-07-13T11:02:27.6904366Z ##[error]Process completed with exit code 1.
