@@ -480,7 +480,7 @@ export default function Profile() {
                 {interests.map(interest => (
                   <Badge key={interest} variant="secondary" className="px-3 py-1 text-sm">
                     {interest}
-                    <button type="button" onClick={() => handleRemoveItem(interest, setInterests, interests)} className="ml-2 hover:text-destructive">
+                    <button type="button" aria-label={`Remove ${interest}`} onClick={() => handleRemoveItem(interest, setInterests, interests)} className="ml-2 hover:text-destructive">
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -499,7 +499,7 @@ export default function Profile() {
                   placeholder="Add an interest..." 
                   className="bg-secondary/50"
                 />
-                <Button type="button" variant="outline" onClick={() => handleAddItem(newInterest, setInterests, interests, setNewInterest)}>
+                <Button type="button" variant="outline" aria-label="Add interest" onClick={() => handleAddItem(newInterest, setInterests, interests, setNewInterest)}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -512,7 +512,7 @@ export default function Profile() {
                 {lookingFor.map(item => (
                   <Badge key={item} variant="outline" className="px-3 py-1 text-sm border-primary/30 bg-primary/5 text-primary">
                     {item}
-                    <button type="button" onClick={() => handleRemoveItem(item, setLookingFor, lookingFor)} className="ml-2 opacity-70 hover:opacity-100">
+                    <button type="button" aria-label={`Remove ${item}`} onClick={() => handleRemoveItem(item, setLookingFor, lookingFor)} className="ml-2 opacity-70 hover:opacity-100">
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -531,7 +531,7 @@ export default function Profile() {
                   placeholder="e.g. Gym Partner, Study Group..." 
                   className="bg-secondary/50"
                 />
-                <Button type="button" variant="outline" onClick={() => handleAddItem(newLookingFor, setLookingFor, lookingFor, setNewLookingFor)}>
+                <Button type="button" variant="outline" aria-label="Add looking for" onClick={() => handleAddItem(newLookingFor, setLookingFor, lookingFor, setNewLookingFor)}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -544,7 +544,7 @@ export default function Profile() {
                 {availability.map(item => (
                   <Badge key={item} variant="outline" className="px-3 py-1 text-sm">
                     {item}
-                    <button type="button" onClick={() => handleRemoveItem(item, setAvailability, availability)} className="ml-2 opacity-70 hover:opacity-100">
+                    <button type="button" aria-label={`Remove ${item}`} onClick={() => handleRemoveItem(item, setAvailability, availability)} className="ml-2 opacity-70 hover:opacity-100">
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -563,7 +563,7 @@ export default function Profile() {
                   placeholder="e.g. Weekday evenings, Weekends..." 
                   className="bg-secondary/50"
                 />
-                <Button type="button" variant="outline" onClick={() => handleAddItem(newAvailability, setAvailability, availability, setNewAvailability)}>
+                <Button type="button" variant="outline" aria-label="Add availability" onClick={() => handleAddItem(newAvailability, setAvailability, availability, setNewAvailability)}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>

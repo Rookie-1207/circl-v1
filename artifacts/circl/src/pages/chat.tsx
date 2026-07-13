@@ -73,7 +73,7 @@ export default function Chat() {
       <div className="flex flex-col h-[calc(100vh-140px)] md:h-[calc(100vh-80px)] bg-card rounded-2xl border shadow-sm overflow-hidden">
         <div className="flex items-center gap-4 p-4 border-b bg-card">
           <Link href="/conversations">
-            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" aria-label="Back to messages">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
@@ -98,7 +98,7 @@ export default function Chat() {
       <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-card/80 backdrop-blur z-10">
         <div className="flex items-center gap-3">
           <Link href="/conversations">
-            <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden shrink-0">
+            <Button variant="ghost" size="icon" className="h-8 w-8 md:hidden shrink-0" aria-label="Back to messages">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
@@ -122,7 +122,7 @@ export default function Chat() {
         
         {otherUser && (
           <Link href={`/profile/${otherUser.id}`}>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground">
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground" aria-label={`View ${otherUser.name}'s profile`}>
               <Info className="h-4 w-4" />
             </Button>
           </Link>
@@ -170,12 +170,13 @@ export default function Chat() {
       {/* Input Area */}
       <form onSubmit={handleSend} className="p-3 bg-card border-t flex gap-2">
         <Input
-          placeholder="Type a message..."
+          placeholder="Type a message…"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           className="flex-1 rounded-full bg-secondary/50 border-transparent focus-visible:ring-1 focus-visible:ring-primary focus-visible:bg-background"
           autoFocus
           autoComplete="off"
+          aria-label="Message"
         />
         <Button 
           type="submit" 
