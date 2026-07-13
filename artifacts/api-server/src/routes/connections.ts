@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, or } from "drizzle-orm";
+import { eq, and, or, inArray } from "drizzle-orm";
 import { db, connectionsTable, usersTable, conversationsTable, notificationsTable } from "@workspace/db";
 import { formatUserProfile } from "../lib/userProfile";
 import {
@@ -38,14 +38,11 @@ router.get("/connections", async (req, res): Promise<void> => {
       )
     );
 
-  // Fetch all referenced users
-  const userIds = new Set<number>();
-  for (const c of connections) {
-    userIds.add(c.fromUserId);
-    userIds.add(c.toUserId);
-  }
-
-  const users = await db.select().from(usersTable);
+  // Fetch only the users referenced by these connections (not full table)
+  const userIds = [...new Set(connections.flatMap((c) => [c.fromUserId, c.toUserId]))];
+  const users = userIds.length > 0
+    ? await db.select().from(usersTable).where(inArray(usersTable.id, userIds))
+    : [];
   const userMap = new Map(users.map((u) => [u.id, u]));
 
   const result = connections.map((c) => ({
@@ -73,6 +70,12 @@ router.post("/connections", async (req, res): Promise<void> => {
   const { toUserId, action } = parsed.data;
   const status = action === "connect" ? "pending" : "passed";
 
+  // Prevent self-connections
+  if (toUserId === currentUserId) {
+    res.status(400).json({ error: "Cannot connect with yourself" });
+    return;
+  }
+
   const [connection] = await db
     .insert(connectionsTable)
     .values({
@@ -80,15 +83,20 @@ router.post("/connections", async (req, res): Promise<void> => {
       toUserId,
       status,
     })
+    .onConflictDoNothing({ target: [connectionsTable.fromUserId, connectionsTable.toUserId] })
     .returning();
+
+  if (!connection) {
+    res.status(409).json({ error: "Connection already exists" });
+    return;
+  }
+
+  // Fetch only the two involved users
+  const [fromUser] = await db.select().from(usersTable).where(eq(usersTable.id, currentUserId));
+  const [toUser] = await db.select().from(usersTable).where(eq(usersTable.id, toUserId));
 
   // Create notification for connect requests
   if (action === "connect") {
-    const [fromUser] = await db
-      .select()
-      .from(usersTable)
-      .where(eq(usersTable.id, currentUserId));
-
     await db.insert(notificationsTable).values({
       userId: toUserId,
       type: "connection_request",
@@ -96,16 +104,6 @@ router.post("/connections", async (req, res): Promise<void> => {
       actorId: currentUserId,
     });
   }
-
-  const [fromUser] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.id, currentUserId));
-
-  const [toUser] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.id, toUserId));
 
   res.status(201).json(
     CreateConnectionResponse.parse({
@@ -152,7 +150,7 @@ router.patch("/connections/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  // If accepted, create a conversation and notify both users
+  // If accepted, create a conversation and notify the requester
   if (bodyParsed.data.status === "accepted") {
     const existingConv = await db
       .select()
@@ -191,15 +189,10 @@ router.patch("/connections/:id", async (req, res): Promise<void> => {
     });
   }
 
-  const [fromUser] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.id, connection.fromUserId));
-
-  const [toUser] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.id, connection.toUserId));
+  // Fetch only the two involved users
+  const involvedUserIds = [connection.fromUserId, connection.toUserId];
+  const users = await db.select().from(usersTable).where(inArray(usersTable.id, involvedUserIds));
+  const userMap = new Map(users.map((u) => [u.id, u]));
 
   res.json(
     UpdateConnectionResponse.parse({
@@ -207,8 +200,8 @@ router.patch("/connections/:id", async (req, res): Promise<void> => {
       fromUserId: connection.fromUserId,
       toUserId: connection.toUserId,
       status: connection.status,
-      fromUser: fromUser ? formatUserProfile(fromUser) : undefined,
-      toUser: toUser ? formatUserProfile(toUser) : undefined,
+      fromUser: formatUserProfile(userMap.get(connection.fromUserId)!),
+      toUser: formatUserProfile(userMap.get(connection.toUserId)!),
       createdAt: connection.createdAt.toISOString(),
     })
   );

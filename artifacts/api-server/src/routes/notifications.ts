@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import { db, notificationsTable, usersTable } from "@workspace/db";
 import { formatUserProfile } from "../lib/userProfile";
 import {
@@ -18,10 +18,15 @@ router.get("/notifications", async (req, res): Promise<void> => {
     .select()
     .from(notificationsTable)
     .where(eq(notificationsTable.userId, currentUserId))
-    .orderBy(desc(notificationsTable.createdAt));
+    .orderBy(desc(notificationsTable.createdAt))
+    .limit(100); // cap to 100 most recent
 
-  const allUsers = await db.select().from(usersTable);
-  const userMap = new Map(allUsers.map((u) => [u.id, u]));
+  // Fetch only the actor users referenced by these notifications (not the whole table)
+  const actorIds = [...new Set(notifications.map((n) => n.actorId).filter((id): id is number => id !== null))];
+  const actors = actorIds.length > 0
+    ? await db.select().from(usersTable).where(inArray(usersTable.id, actorIds))
+    : [];
+  const userMap = new Map(actors.map((u) => [u.id, u]));
 
   const result = notifications.map((n) => ({
     id: n.id,
@@ -78,8 +83,12 @@ router.patch("/notifications/:id/read", async (req, res): Promise<void> => {
     return;
   }
 
-  const allUsers = await db.select().from(usersTable);
-  const userMap = new Map(allUsers.map((u) => [u.id, u]));
+  // Fetch only the actor user for this notification (not the whole table)
+  let actor = undefined;
+  if (notification.actorId) {
+    const [actorUser] = await db.select().from(usersTable).where(eq(usersTable.id, notification.actorId));
+    if (actorUser) actor = formatUserProfile(actorUser);
+  }
 
   res.json(
     MarkNotificationReadResponse.parse({
@@ -88,7 +97,7 @@ router.patch("/notifications/:id/read", async (req, res): Promise<void> => {
       message: notification.message,
       isRead: notification.isRead,
       actorId: notification.actorId ?? null,
-      actor: notification.actorId ? formatUserProfile(userMap.get(notification.actorId)!) : undefined,
+      actor,
       createdAt: notification.createdAt.toISOString(),
     })
   );

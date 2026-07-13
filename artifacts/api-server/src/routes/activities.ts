@@ -1,10 +1,11 @@
 import { Router, type IRouter } from "express";
-import { eq, and, desc, gte, lte, inArray } from "drizzle-orm";
+import { eq, and, or, desc, gte, lte, inArray } from "drizzle-orm";
 import {
   db,
   activitiesTable,
   activityParticipantsTable,
   usersTable,
+  connectionsTable,
 } from "@workspace/db";
 import { z } from "zod";
 import { formatUserProfile } from "../lib/userProfile";
@@ -132,15 +133,36 @@ router.get("/activities", async (req, res): Promise<void> => {
     .select()
     .from(activitiesTable)
     .where(and(...conditions))
-    .orderBy(desc(activitiesTable.createdAt));
+    .orderBy(desc(activitiesTable.createdAt))
+    .limit(200); // safety cap — prevent unbounded scans at scale
 
   if (activities.length === 0) {
     res.json([]);
     return;
   }
 
-  // Fetch hosts
   const hostIds = [...new Set(activities.map((a) => a.hostUserId))];
+
+  // Resolve accepted connections for visibility enforcement (connections_only activities)
+  const acceptedConnections = await db
+    .select({ fromUserId: connectionsTable.fromUserId, toUserId: connectionsTable.toUserId })
+    .from(connectionsTable)
+    .where(
+      and(
+        or(
+          eq(connectionsTable.fromUserId, currentUserId),
+          eq(connectionsTable.toUserId, currentUserId)
+        ),
+        eq(connectionsTable.status, "accepted")
+      )
+    );
+
+  const connectedUserIds = new Set<number>([currentUserId]);
+  for (const c of acceptedConnections) {
+    connectedUserIds.add(c.fromUserId === currentUserId ? c.toUserId : c.fromUserId);
+  }
+
+  // Fetch hosts
   const hosts = await db
     .select()
     .from(usersTable)
@@ -191,6 +213,11 @@ router.get("/activities", async (req, res): Promise<void> => {
       _distance: distanceKm,
     };
   });
+
+  // Enforce visibility: hide connections_only activities from non-connected users
+  results = results.filter(
+    (r) => r.visibility === "public" || connectedUserIds.has(r.host?.id ?? -1),
+  );
 
   // Filter open spots
   if (hasSpots) {

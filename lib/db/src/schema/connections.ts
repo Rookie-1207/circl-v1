@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, index, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -20,6 +20,8 @@ export const connectionsTable = pgTable(
   (table) => [
     index("connections_from_user_id_idx").on(table.fromUserId),
     index("connections_to_user_id_idx").on(table.toUserId),
+    // Prevent duplicate connection requests between the same pair
+    unique("connections_pair_unique").on(table.fromUserId, table.toUserId),
   ],
 );
 

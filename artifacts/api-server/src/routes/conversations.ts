@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, or, and, desc } from "drizzle-orm";
+import { eq, or, and, desc, inArray, count, ne } from "drizzle-orm";
 import { db, conversationsTable, messagesTable, usersTable } from "@workspace/db";
 import { formatUserProfile } from "../lib/userProfile";
 import {
@@ -10,6 +10,13 @@ import {
   SendMessageResponse,
   ListConversationsResponse,
 } from "@workspace/api-zod";
+import { z } from "zod";
+
+// Message content cap — enforced here since SendMessageBody is generated
+const MESSAGE_MAX_LENGTH = 4000;
+const SafeSendMessageBody = SendMessageBody.and(
+  z.object({ content: z.string().min(1).max(MESSAGE_MAX_LENGTH) })
+);
 
 const router: IRouter = Router();
 
@@ -27,42 +34,62 @@ router.get("/conversations", async (req, res): Promise<void> => {
     )
     .orderBy(desc(conversationsTable.updatedAt));
 
-  const allUsers = await db.select().from(usersTable);
-  const userMap = new Map(allUsers.map((u) => [u.id, u]));
+  if (convs.length === 0) {
+    res.json(ListConversationsResponse.parse([]));
+    return;
+  }
 
-  const result = await Promise.all(
-    convs.map(async (conv) => {
-      const otherId = conv.user1Id === currentUserId ? conv.user2Id : conv.user1Id;
-      const otherUser = userMap.get(otherId)!;
+  // Fetch only the "other" users — not the whole users table
+  const otherUserIds = [...new Set(
+    convs.map((c) => c.user1Id === currentUserId ? c.user2Id : c.user1Id)
+  )];
+  const otherUsers = await db.select().from(usersTable).where(inArray(usersTable.id, otherUserIds));
+  const userMap = new Map(otherUsers.map((u) => [u.id, u]));
 
-      const [lastMsg] = await db
-        .select()
-        .from(messagesTable)
-        .where(eq(messagesTable.conversationId, conv.id))
-        .orderBy(desc(messagesTable.createdAt))
-        .limit(1);
+  const convIds = convs.map((c) => c.id);
 
-      const unreadRows = await db
-        .select()
-        .from(messagesTable)
-        .where(
-          and(
-            eq(messagesTable.conversationId, conv.id),
-            eq(messagesTable.isRead, false)
-          )
-        );
+  // Batch: unread counts per conversation in one query (not N+1)
+  const unreadRows = await db
+    .select({ conversationId: messagesTable.conversationId, value: count() })
+    .from(messagesTable)
+    .where(
+      and(
+        inArray(messagesTable.conversationId, convIds),
+        eq(messagesTable.isRead, false),
+        ne(messagesTable.senderId, currentUserId)
+      )
+    )
+    .groupBy(messagesTable.conversationId);
+  const unreadMap = new Map(unreadRows.map((r) => [r.conversationId, r.value]));
 
-      const unreadCount = unreadRows.filter((m) => m.senderId !== currentUserId).length;
+  // Batch: most-recent message per conversation in one query
+  // Fetch recent messages ordered desc, pick first seen per conversation_id
+  const recentMessages = await db
+    .select()
+    .from(messagesTable)
+    .where(inArray(messagesTable.conversationId, convIds))
+    .orderBy(desc(messagesTable.createdAt))
+    .limit(convIds.length * 5); // generous bound: 5 messages per conv max fetched
 
-      return {
-        id: conv.id,
-        otherUser: formatUserProfile(otherUser),
-        lastMessage: lastMsg?.content ?? null,
-        unreadCount,
-        updatedAt: conv.updatedAt.toISOString(),
-      };
-    })
-  );
+  const lastMsgMap = new Map<number, typeof recentMessages[0]>();
+  for (const msg of recentMessages) {
+    if (!lastMsgMap.has(msg.conversationId)) {
+      lastMsgMap.set(msg.conversationId, msg);
+    }
+  }
+
+  const result = convs.map((conv) => {
+    const otherId = conv.user1Id === currentUserId ? conv.user2Id : conv.user1Id;
+    const otherUser = userMap.get(otherId)!;
+    const lastMsg = lastMsgMap.get(conv.id);
+    return {
+      id: conv.id,
+      otherUser: formatUserProfile(otherUser),
+      lastMessage: lastMsg?.content ?? null,
+      unreadCount: unreadMap.get(conv.id) ?? 0,
+      updatedAt: conv.updatedAt.toISOString(),
+    };
+  });
 
   res.json(ListConversationsResponse.parse(result));
 });
@@ -99,9 +126,11 @@ router.get("/conversations/:id/messages", async (req, res): Promise<void> => {
     .select()
     .from(messagesTable)
     .where(eq(messagesTable.conversationId, pathParams.data.id))
-    .orderBy(messagesTable.createdAt);
+    .orderBy(messagesTable.createdAt)
+    .limit(500); // cap at 500 messages per load
 
-  // Mark messages as read
+  // Mark messages as read (only messages from the other party)
+  const otherUserId = conv.user1Id === currentUserId ? conv.user2Id : conv.user1Id;
   await db
     .update(messagesTable)
     .set({ isRead: true })
@@ -109,7 +138,7 @@ router.get("/conversations/:id/messages", async (req, res): Promise<void> => {
       and(
         eq(messagesTable.conversationId, pathParams.data.id),
         eq(messagesTable.isRead, false),
-        eq(messagesTable.senderId, conv.user1Id === currentUserId ? conv.user2Id : conv.user1Id)
+        eq(messagesTable.senderId, otherUserId)
       )
     );
 
@@ -155,7 +184,8 @@ router.post("/conversations/:id/messages", async (req, res): Promise<void> => {
     return;
   }
 
-  const bodyParsed = SendMessageBody.safeParse(req.body);
+  // Use the length-capped body schema
+  const bodyParsed = SafeSendMessageBody.safeParse(req.body);
   if (!bodyParsed.success) {
     res.status(400).json({ error: bodyParsed.error.message });
     return;

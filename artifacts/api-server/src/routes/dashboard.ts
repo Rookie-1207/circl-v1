@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, or, desc } from "drizzle-orm";
+import { eq, and, or, desc, inArray, count, ne } from "drizzle-orm";
 import { db, usersTable, connectionsTable, conversationsTable, messagesTable } from "@workspace/db";
 import { GetDashboardStatsResponse } from "@workspace/api-zod";
 import { formatUserProfile } from "../lib/userProfile";
@@ -34,7 +34,7 @@ router.get("/dashboard/stats", async (req, res): Promise<void> => {
       )
     );
 
-  // Unread messages count — only conversations the current user is part of
+  // Conversations the current user is part of
   const userConversations = await db
     .select()
     .from(conversationsTable)
@@ -47,19 +47,24 @@ router.get("/dashboard/stats", async (req, res): Promise<void> => {
 
   const userConvIds = userConversations.map((c) => c.id);
 
+  // Unread messages — scoped to user's conversations, not sent by current user
+  // Single targeted query; never fetches messages from other users' conversations
   let newMessages = 0;
   if (userConvIds.length > 0) {
-    const unreadMessages = await db
-      .select()
+    const [unreadResult] = await db
+      .select({ value: count() })
       .from(messagesTable)
-      .where(eq(messagesTable.isRead, false));
-
-    newMessages = unreadMessages.filter(
-      (m) => m.senderId !== currentUserId && userConvIds.includes(m.conversationId)
-    ).length;
+      .where(
+        and(
+          inArray(messagesTable.conversationId, userConvIds),
+          eq(messagesTable.isRead, false),
+          ne(messagesTable.senderId, currentUserId)
+        )
+      );
+    newMessages = unreadResult?.value ?? 0;
   }
 
-  // Recent matches (users from accepted connections)
+  // Recent matches — fetch only the 5 most recent accepted connections
   const recentMatchConnections = await db
     .select()
     .from(connectionsTable)
@@ -75,31 +80,45 @@ router.get("/dashboard/stats", async (req, res): Promise<void> => {
     .orderBy(desc(connectionsTable.createdAt))
     .limit(5);
 
-  const allUsers = await db.select().from(usersTable);
-  const userMap = new Map(allUsers.map((u) => [u.id, u]));
+  // Fetch only the users referenced by recent matches (not the whole table)
+  const recentMatchUserIds = recentMatchConnections.map((c) =>
+    c.fromUserId === currentUserId ? c.toUserId : c.fromUserId
+  );
+
+  const recentMatchUsers = recentMatchUserIds.length > 0
+    ? await db.select().from(usersTable).where(inArray(usersTable.id, recentMatchUserIds))
+    : [];
+  const recentUserMap = new Map(recentMatchUsers.map((u) => [u.id, u]));
 
   const recentMatches = recentMatchConnections
     .map((c) => {
       const otherId = c.fromUserId === currentUserId ? c.toUserId : c.fromUserId;
-      const user = userMap.get(otherId);
+      const user = recentUserMap.get(otherId);
       return user ? formatUserProfile(user) : null;
     })
     .filter(Boolean);
 
-  // Activity by category based on matched users' lookingFor values.
+  // Activity chart — based on matched users' lookingFor values.
+  // Fetch only the matched partner users (capped at 500 matches max)
+  const allMatchUserIds = matches
+    .slice(0, 500)
+    .map((c) => (c.fromUserId === currentUserId ? c.toUserId : c.fromUserId));
+
+  const matchedUsers = allMatchUserIds.length > 0
+    ? await db.select({ id: usersTable.id, lookingFor: usersTable.lookingFor })
+        .from(usersTable)
+        .where(inArray(usersTable.id, allMatchUserIds))
+    : [];
+
   const categoryMap = new Map<string, number>();
-  for (const conn of matches) {
-    const otherId = conn.fromUserId === currentUserId ? conn.toUserId : conn.fromUserId;
-    const user = userMap.get(otherId);
-    if (user) {
-      for (const lf of user.lookingFor) {
-        categoryMap.set(lf, (categoryMap.get(lf) ?? 0) + 1);
-      }
+  for (const user of matchedUsers) {
+    for (const lf of user.lookingFor) {
+      categoryMap.set(lf, (categoryMap.get(lf) ?? 0) + 1);
     }
   }
 
   const activityByCategory = Array.from(categoryMap.entries())
-    .map(([category, count]) => ({ category, count }))
+    .map(([category, value]) => ({ category, count: value }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 6);
 
