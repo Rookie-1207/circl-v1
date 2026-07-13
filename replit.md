@@ -58,6 +58,14 @@ _Populate as you build — explicit user instructions worth remembering across s
 - The DB schema uses `text().array()` for interests/lookingFor/availability — Drizzle `array()` must be a method call, not `array(text())`.
 - After changing `lib/db/src/schema/`, run `pnpm --filter @workspace/db run push` to apply DDL changes.
 - API auth requires `SUPABASE_URL`; set `SUPABASE_JWT_SECRET` too when using legacy HS256 Supabase tokens. Optional overrides: `SUPABASE_JWT_ISSUER`, `SUPABASE_JWT_AUDIENCE`.
+- **Auth redirect URLs are dynamic, not hardcoded.** `getAuthRedirectUrl()` in `artifacts/circl/src/lib/supabase.ts` builds signup-confirmation and password-reset links from `window.location.origin` (+ `BASE_URL`) at call time, so the same code works on localhost and in production with zero changes. Never hardcode a host in an auth redirect — always route through this helper.
+- **Supabase dashboard config required** (Authentication → URL Configuration in the Supabase project):
+  - Site URL: set to the production domain (e.g. `https://<repl-slug>.<replit-user>.replit.app` or a custom domain). This is the fallback used by some Supabase email templates and must not be left as `localhost:3000`.
+  - Redirect URLs allow list: must include every origin the app can run on, since Supabase rejects any `redirectTo`/`emailRedirectTo` not on this list:
+    - `http://localhost:5173/*` (or whatever the local dev port is) — for local development
+    - The `*.replit.dev` preview domain, e.g. `https://<repl-id>.<cluster>.replit.dev/*` — for the workspace preview
+    - The production deployment domain, e.g. `https://<repl-slug>.<replit-user>.replit.app/*` (and any custom domain) — for production
+  - Without matching entries here, Supabase silently falls back to the Site URL for the email link regardless of what the app passed as `redirectTo`, which is the classic cause of "email links always go to the wrong place."
 
 ## Pointers
 

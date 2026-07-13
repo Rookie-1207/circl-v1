@@ -8,7 +8,7 @@ import {
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { AuthError, Session, User } from "@supabase/supabase-js";
-import { isSupabaseConfigured, supabase } from "@/lib/supabase";
+import { getAuthRedirectUrl, isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 type AuthContextValue = {
   isAuthenticated: boolean;
@@ -23,7 +23,7 @@ type AuthContextValue = {
     metadata: { name: string; university: string },
   ) => Promise<AuthError | null>;
   logout: () => Promise<AuthError | null>;
-  resetPassword: (email: string, redirectTo: string) => Promise<AuthError | null>;
+  resetPassword: (email: string, redirectTo?: string) => Promise<AuthError | null>;
   updatePassword: (newPassword: string) => Promise<AuthError | null>;
 };
 
@@ -98,6 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           password,
           options: {
             data: metadata,
+            // Dynamic per-environment link: localhost in dev, real domain in prod.
+            emailRedirectTo: getAuthRedirectUrl(),
           },
         });
         return error;
@@ -116,7 +118,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!supabase) {
           return { name: "AuthConfigError", message: "Supabase is not configured." } as AuthError;
         }
-        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: redirectTo ?? getAuthRedirectUrl("reset-password"),
+        });
         return error;
       },
       async updatePassword(newPassword) {
