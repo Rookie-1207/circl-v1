@@ -1,0 +1,311 @@
+You are the Lead Product Engineer, QA Engineer, and UX Designer.
+
+Circl is feature-complete.
+
+Do NOT redesign the application.
+Do NOT change the overall UI.
+Do NOT remove existing functionality.
+
+This is the FINAL RELEASE CANDIDATE (RC1).
+
+Your goal is to make Circl feel like a polished App Store / Play Store application that is ready for real users.
+
+====================================================
+AUTHENTICATION
+====================================================
+
+1. Implement a complete Forgot Password flow using Supabase Auth.
+
+Requirements:
+
+- "Forgot Password?" link on Login page
+- Reset password email
+- Secure reset password page
+- Success confirmation
+- Friendly error messages
+- Loading states
+- Prevent abuse/spam
+
+====================================================
+LOGIN PAGE
+====================================================
+
+Remove every remaining reference to
+
+@university.edu
+college email only
+.edu email
+
+The application should accept any valid email.
+
+Improve the login page.
+
+Keep it clean.
+
+Professional.
+
+Premium.
+
+====================================================
+SIGNUP
+====================================================
+
+Review the entire signup flow.
+
+Ensure:
+
+• Validation is clear
+• Password strength indicator
+• Password confirmation
+• Proper error messages
+• Success states
+• Loading indicators
+• No unnecessary fields
+
+====================================================
+FORMS
+====================================================
+
+Audit every form in the application.
+
+Ensure:
+
+Consistent spacing
+
+Consistent buttons
+
+Consistent placeholders
+
+Consistent typography
+
+Keyboard navigation
+
+Tab order
+
+Autocomplete
+
+Required field indicators
+
+====================================================
+POLISH
+====================================================
+
+Walk through the app like a real user.
+
+Find every small issue.
+
+Examples:
+
+Misaligned buttons
+
+Inconsistent padding
+
+Wrong icon size
+
+Broken spacing
+
+Overflow
+
+Mobile issues
+
+Desktop issues
+
+Slow animations
+
+Wrong border radius
+
+Text clipping
+
+Missing hover states
+
+Wrong font weight
+
+Duplicate buttons
+
+Anything that feels unfinished
+
+Fix all of them.
+
+====================================================
+MICRO INTERACTIONS
+====================================================
+
+Improve small interactions.
+
+Button hover
+
+Card hover
+
+Loading
+
+Success animation
+
+Page transitions
+
+Form validation
+
+Toast notifications
+
+Keep everything subtle.
+
+====================================================
+EMPTY STATES
+====================================================
+
+Every empty screen should feel intentional.
+
+Examples
+
+No activities
+
+No chats
+
+No notifications
+
+No matches
+
+Use beautiful illustrations or icons.
+
+Add friendly messaging.
+
+====================================================
+ERROR HANDLING
+====================================================
+
+Replace technical messages with human-friendly language.
+
+Examples
+
+Instead of
+
+401 Unauthorized
+
+Use
+
+Please sign in to continue.
+
+Instead of
+
+Network Error
+
+Use
+
+We couldn't connect. Please try again.
+
+====================================================
+RESPONSIVENESS
+====================================================
+
+Audit every screen.
+
+Desktop
+
+Tablet
+
+Mobile
+
+No horizontal scrolling.
+
+No broken layouts.
+
+====================================================
+ACCESSIBILITY
+====================================================
+
+Keyboard navigation
+
+Focus indicators
+
+ARIA labels
+
+Contrast
+
+Screen reader compatibility
+
+====================================================
+FINAL CLEANUP
+====================================================
+
+Remove:
+
+Unused imports
+
+Dead code
+
+Console logs
+
+TODO comments
+
+Debug components
+
+Developer-only UI
+
+====================================================
+QUALITY ASSURANCE
+====================================================
+
+Manually inspect every page.
+
+Dashboard
+
+Happening Now
+
+Discover
+
+Chat
+
+Notifications
+
+Matches
+
+Profile
+
+Settings
+
+Login
+
+Signup
+
+Forgot Password
+
+Reset Password
+
+Report every issue you find.
+
+Fix every issue.
+
+====================================================
+FINAL VERIFICATION
+====================================================
+
+Run
+
+Typecheck
+
+Lint
+
+Build
+
+Tests
+
+Verify production build succeeds.
+
+====================================================
+OUTPUT
+====================================================
+
+At the end provide:
+
+✅ Production Readiness Score (/100)
+
+✅ UX Score
+
+✅ Security Score
+
+✅ Performance Score
+
+✅ Accessibility Score
+
+✅ Remaining Known Issues (if any)
+
+Only stop when Circl feels like a premium production-ready application suitable for deployment to real users.

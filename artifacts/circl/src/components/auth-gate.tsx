@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/components/auth-provider";
 
-const authRoutes = new Set(["/login", "/signup"]);
+const authRoutes = new Set(["/login", "/signup", "/forgot-password", "/reset-password"]);
 
 function AuthLoading() {
   return (

@@ -20,6 +20,8 @@ import Notifications from '@/pages/notifications';
 import Settings from '@/pages/settings';
 import NotFound from '@/pages/not-found';
 import Login from '@/pages/login';
+import ForgotPassword from '@/pages/forgot-password';
+import ResetPassword from '@/pages/reset-password';
 import HappeningNow from '@/pages/happening-now';
 
 const queryClient = new QueryClient({
@@ -66,6 +68,8 @@ function Router() {
       <Switch>
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Login} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/reset-password" component={ResetPassword} />
         <Route component={ProtectedRoutes} />
       </Switch>
     </AuthGate>
