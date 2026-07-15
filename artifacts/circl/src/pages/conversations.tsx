@@ -68,7 +68,7 @@ export default function Conversations() {
                       </span>
                     </div>
                     <p className={`text-sm truncate ${conv.unreadCount > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
-                      {conv.lastMessage || "Start a conversation!"}
+                      {conv.lastMessage || "Tap to say hello"}
                     </p>
                   </div>
                   

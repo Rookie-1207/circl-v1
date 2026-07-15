@@ -1,10 +1,15 @@
 import { useMemo, useState } from "react";
-import { useDiscoverUsers, useCreateConnection } from "@workspace/api-client-react";
+import {
+  useDiscoverUsers,
+  useCreateConnection,
+  getListConnectionsQueryKey,
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Search, MapPin, Check, X } from "lucide-react";
+import { AlertCircle, Search, MapPin, Check, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { UserAvatar } from "@/components/user-avatar";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +20,12 @@ export default function Discover() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Track per-user pending mutations so only the acted-on card shows a spinner
+  const [pendingIds, setPendingIds] = useState<Set<number>>(new Set());
+  // Track acted-on users so they're hidden immediately (optimistic)
+  const [actedIds, setActedIds] = useState<Set<number>>(new Set());
 
   const queryParams = {
     ...(search ? { search } : {}),
@@ -41,23 +52,48 @@ export default function Discover() {
   }, [allResults, category]);
 
   const handleConnect = (userId: number) => {
+    if (pendingIds.has(userId)) return;
+    setPendingIds((s) => new Set(s).add(userId));
+
     createConnection.mutate(
       { data: { toUserId: userId, action: "connect" } },
       {
         onSuccess: () => {
-          toast({ title: "Connection request sent!" });
-          refetch();
+          toast({ title: "Request sent!" });
+          setActedIds((s) => new Set(s).add(userId));
+          // Invalidate connections list so Matches tab stays in sync
+          queryClient.invalidateQueries({ queryKey: getListConnectionsQueryKey() });
+        },
+        onError: () => {
+          toast({ title: "Couldn't send request. Please try again.", variant: "destructive" });
+        },
+        onSettled: () => {
+          setPendingIds((s) => {
+            const next = new Set(s);
+            next.delete(userId);
+            return next;
+          });
         },
       }
     );
   };
 
   const handlePass = (userId: number) => {
+    if (pendingIds.has(userId)) return;
+    setPendingIds((s) => new Set(s).add(userId));
+
     createConnection.mutate(
       { data: { toUserId: userId, action: "pass" } },
       {
         onSuccess: () => {
-          refetch();
+          setActedIds((s) => new Set(s).add(userId));
+        },
+        onSettled: () => {
+          setPendingIds((s) => {
+            const next = new Set(s);
+            next.delete(userId);
+            return next;
+          });
         },
       }
     );
@@ -68,6 +104,9 @@ export default function Discover() {
     if (score >= 50) return "bg-amber-500/10 text-amber-600 border-amber-500/20";
     return "bg-red-500/10 text-red-600 border-red-500/20";
   };
+
+  // Filter out users already acted on (optimistic removal)
+  const visibleResults = results?.filter((r) => !actedIds.has(r.user.id));
 
   return (
     <div className="space-y-6">
@@ -81,7 +120,7 @@ export default function Discover() {
         <div className="relative w-full md:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by name, interests..."
+            placeholder="Search by name or interests…"
             className="pl-9 bg-card"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -114,7 +153,7 @@ export default function Discover() {
           <div className="h-20 w-20 rounded-full bg-secondary flex items-center justify-center mb-6">
             <AlertCircle className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h2 className="text-xl font-display font-bold">Could not load people</h2>
+          <h2 className="text-xl font-display font-bold">Couldn't load people</h2>
           <p className="text-muted-foreground mt-2 max-w-sm">
             Try again in a moment.
           </p>
@@ -122,95 +161,104 @@ export default function Discover() {
             Retry
           </Button>
         </div>
-      ) : results && results.length > 0 ? (
+      ) : visibleResults && visibleResults.length > 0 ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {results.map((result, index) => (
-            <Card 
-              key={result.user.id} 
-              className="overflow-hidden border-none shadow-sm hover-elevate transition-all animate-in fade-in slide-in-from-bottom-8"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <div className="h-24 bg-gradient-to-br from-primary/20 to-accent/50" />
-              <CardContent className="px-6 pb-4 pt-0 relative">
-                <div className="flex justify-between items-end mb-4">
-                  <div className="-mt-12">
-                    <UserAvatar user={result.user} className="h-24 w-24 border-4 border-card shadow-sm" showOnlineStatus />
+          {visibleResults.map((result, index) => {
+            const isPending = pendingIds.has(result.user.id);
+            return (
+              <Card
+                key={result.user.id}
+                className="overflow-hidden border-none shadow-sm hover-elevate transition-all animate-in fade-in slide-in-from-bottom-8"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <div className="h-24 bg-gradient-to-br from-primary/20 to-accent/50" />
+                <CardContent className="px-6 pb-4 pt-0 relative">
+                  <div className="flex justify-between items-end mb-4">
+                    <div className="-mt-12">
+                      <UserAvatar user={result.user} className="h-24 w-24 border-4 border-card shadow-sm" showOnlineStatus />
+                    </div>
+                    <Badge variant="outline" className={cn("font-mono font-bold px-2 py-0.5", getScoreColor(result.compatibilityScore))}>
+                      {result.compatibilityScore}% Match
+                    </Badge>
                   </div>
-                  <Badge variant="outline" className={cn("font-mono font-bold px-2 py-0.5", getScoreColor(result.compatibilityScore))}>
-                    {result.compatibilityScore}% Match
-                  </Badge>
-                </div>
-                
-                <Link href={`/profile/${result.user.id}`}>
-                  <h3 className="font-display font-bold text-xl hover:text-primary transition-colors">
-                    {result.user.name}
-                  </h3>
-                </Link>
-                <div className="flex items-center gap-1.5 text-muted-foreground text-sm mt-1">
-                  <MapPin className="h-3.5 w-3.5" />
-                  {result.user.university}
-                </div>
-                
-                {result.user.bio && (
-                  <p className="mt-4 text-sm line-clamp-2 text-foreground/80">
-                    {result.user.bio}
-                  </p>
-                )}
-                
-                <div className="mt-4 flex flex-wrap gap-1.5">
-                  {result.user.interests.slice(0, 3).map((interest) => (
-                    <Badge key={interest} variant="secondary" className="text-[10px] font-medium px-2 py-0">
-                      {interest}
-                    </Badge>
-                  ))}
-                  {result.user.interests.length > 3 && (
-                    <Badge variant="secondary" className="text-[10px] font-medium px-2 py-0">
-                      +{result.user.interests.length - 3}
-                    </Badge>
+
+                  <Link href={`/profile/${result.user.id}`}>
+                    <h3 className="font-display font-bold text-xl hover:text-primary transition-colors">
+                      {result.user.name}
+                    </h3>
+                  </Link>
+                  <div className="flex items-center gap-1.5 text-muted-foreground text-sm mt-1">
+                    <MapPin className="h-3.5 w-3.5" />
+                    {result.user.university}
+                  </div>
+
+                  {result.user.bio && (
+                    <p className="mt-4 text-sm line-clamp-2 text-foreground/80">
+                      {result.user.bio}
+                    </p>
                   )}
-                </div>
-              </CardContent>
-              <CardFooter className="px-6 py-4 bg-secondary/30 flex gap-3">
-                <Button 
-                  variant="outline" 
-                  className="w-full rounded-xl hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
-                  onClick={() => handlePass(result.user.id)}
-                  disabled={createConnection.isPending}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Pass
-                </Button>
-                <Button 
-                  className="w-full rounded-xl"
-                  onClick={() => handleConnect(result.user.id)}
-                  disabled={createConnection.isPending}
-                >
-                  <Check className="h-4 w-4 mr-2" />
-                  Connect
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+
+                  <div className="mt-4 flex flex-wrap gap-1.5">
+                    {result.user.interests.slice(0, 3).map((interest) => (
+                      <Badge key={interest} variant="secondary" className="text-[10px] font-medium px-2 py-0">
+                        {interest}
+                      </Badge>
+                    ))}
+                    {result.user.interests.length > 3 && (
+                      <Badge variant="secondary" className="text-[10px] font-medium px-2 py-0">
+                        +{result.user.interests.length - 3}
+                      </Badge>
+                    )}
+                  </div>
+                </CardContent>
+                <CardFooter className="px-6 py-4 bg-secondary/30 flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-xl hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+                    onClick={() => handlePass(result.user.id)}
+                    disabled={isPending}
+                    aria-label={`Pass on ${result.user.name}`}
+                  >
+                    {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4 mr-2" />}
+                    Pass
+                  </Button>
+                  <Button
+                    className="w-full rounded-xl"
+                    onClick={() => handleConnect(result.user.id)}
+                    disabled={isPending}
+                    aria-label={`Connect with ${result.user.name}`}
+                  >
+                    {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
+                    Connect
+                  </Button>
+                </CardFooter>
+              </Card>
+            );
+          })}
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="h-20 w-20 rounded-full bg-secondary flex items-center justify-center mb-6">
             <Search className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h2 className="text-xl font-display font-bold">No new faces found</h2>
+          <h2 className="text-xl font-display font-bold">You've seen everyone</h2>
           <p className="text-muted-foreground mt-2 max-w-sm">
-            You've seen everyone who matches your current filters. Try adjusting your search or category.
+            {search || category !== "All"
+              ? "No one matches your current filters. Clear them to see more people."
+              : "Check back soon — new people join every day."}
           </p>
-          <Button 
-            variant="outline" 
-            className="mt-6 rounded-full"
-            onClick={() => {
-              setSearch("");
-              setCategory("All");
-            }}
-          >
-            Clear Filters
-          </Button>
+          {(search || category !== "All") && (
+            <Button
+              variant="outline"
+              className="mt-6 rounded-full"
+              onClick={() => {
+                setSearch("");
+                setCategory("All");
+              }}
+            >
+              Clear Filters
+            </Button>
+          )}
         </div>
       )}
     </div>

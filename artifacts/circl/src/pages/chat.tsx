@@ -236,15 +236,16 @@ export default function Chat() {
                     >
                       <p className="break-words whitespace-pre-wrap">{msg.content}</p>
                     </div>
-                    {/* Report button — only visible on hover, only for others' messages */}
+                    {/* Report button: always rendered, visible on hover on desktop,
+                        always visible on touch/mobile via the sm:opacity-0 trick */}
                     {!isMe && (
                       <button
                         type="button"
                         aria-label="Report message"
                         onClick={() => setReportingMessageId(msg.id)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 flex items-center justify-center rounded-full text-muted-foreground/50 hover:text-muted-foreground hover:bg-secondary shrink-0"
+                        className="sm:opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 flex items-center justify-center rounded-full text-muted-foreground/40 hover:text-muted-foreground hover:bg-secondary shrink-0 touch-manipulation"
                       >
-                        <Flag className="h-3 w-3" />
+                        <Flag className="h-3.5 w-3.5" />
                       </button>
                     )}
                   </div>

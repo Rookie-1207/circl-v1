@@ -247,6 +247,7 @@ router.get("/activities", async (req, res): Promise<void> => {
 
 // GET /activities/:id
 router.get("/activities/:id", async (req, res): Promise<void> => {
+  const currentUserId = req.auth.userId;
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     res.status(400).json({ error: "Invalid id" });
@@ -261,6 +262,34 @@ router.get("/activities/:id", async (req, res): Promise<void> => {
   if (!activity) {
     res.status(404).json({ error: "Activity not found" });
     return;
+  }
+
+  // Block check — treat activities hosted by blocked users as not found
+  if (await areUsersBlocked(currentUserId, activity.hostUserId)) {
+    res.status(404).json({ error: "Activity not found" });
+    return;
+  }
+
+  // Enforce connections_only visibility: only the host and their connections can see it
+  if (activity.visibility === "connections_only" && activity.hostUserId !== currentUserId) {
+    const [connection] = await db
+      .select({ id: connectionsTable.id })
+      .from(connectionsTable)
+      .where(
+        and(
+          or(
+            and(eq(connectionsTable.fromUserId, currentUserId), eq(connectionsTable.toUserId, activity.hostUserId)),
+            and(eq(connectionsTable.fromUserId, activity.hostUserId), eq(connectionsTable.toUserId, currentUserId)),
+          ),
+          eq(connectionsTable.status, "accepted"),
+        ),
+      )
+      .limit(1);
+
+    if (!connection) {
+      res.status(404).json({ error: "Activity not found" });
+      return;
+    }
   }
 
   const [host] = await db

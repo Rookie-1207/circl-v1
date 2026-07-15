@@ -3,10 +3,12 @@ import { useParams, Link } from "wouter";
 import {
   useGetUserProfile,
   getGetUserProfileQueryKey,
+  getDiscoverUsersQueryKey,
   useCreateConnection,
   useBlockUser,
   useCreateReport,
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +24,8 @@ import {
   MoreHorizontal,
   Ban,
   Flag,
+  UserCheck,
+  Loader2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -72,6 +76,7 @@ export default function ViewProfile() {
   const { id } = useParams<{ id: string }>();
   const userId = Number(id);
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
 
   const { data: user, isLoading, isError, refetch } = useGetUserProfile(userId, {
     query: { enabled: !!userId, queryKey: getGetUserProfileQueryKey(userId) }
@@ -82,6 +87,10 @@ export default function ViewProfile() {
   const createReport = useCreateReport();
   const { toast } = useToast();
 
+  // Connection request state — persists for this page visit
+  const [connectionSent, setConnectionSent] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+
   // Block dialog
   const [blockDialogOpen, setBlockDialogOpen] = useState(false);
 
@@ -91,11 +100,27 @@ export default function ViewProfile() {
   const [reportDescription, setReportDescription] = useState("");
 
   const handleConnect = () => {
+    if (connectionSent || createConnection.isPending) return;
+    setConnectionError(null);
     createConnection.mutate(
       { data: { toUserId: userId, action: "connect" } },
       {
         onSuccess: () => {
+          setConnectionSent(true);
           toast({ title: "Connection request sent!" });
+          // Invalidate discover so this person disappears from discovery
+          queryClient.invalidateQueries({ queryKey: getDiscoverUsersQueryKey() });
+        },
+        onError: (err: unknown) => {
+          const msg =
+            err instanceof Error ? err.message : "Something went wrong. Please try again.";
+          // 409 means already requested — treat as success
+          if (msg.includes("409") || msg.toLowerCase().includes("already")) {
+            setConnectionSent(true);
+          } else {
+            setConnectionError(msg);
+            toast({ title: msg, variant: "destructive" });
+          }
         },
       }
     );
@@ -106,6 +131,8 @@ export default function ViewProfile() {
       onSuccess: () => {
         toast({ title: `${user?.name ?? "User"} has been blocked.` });
         setBlockDialogOpen(false);
+        // Invalidate discover so blocked user disappears
+        queryClient.invalidateQueries({ queryKey: getDiscoverUsersQueryKey() });
         setLocation("/discover");
       },
       onError: () => {
@@ -132,7 +159,7 @@ export default function ViewProfile() {
         onSuccess: () => {
           toast({
             title: "Report submitted",
-            description: "Thank you for helping keep Circl safe. We'll review it shortly.",
+            description: "Thanks for keeping Circl safe. We'll review it shortly.",
           });
           setReportDialogOpen(false);
           setReportReason("");
@@ -165,7 +192,7 @@ export default function ViewProfile() {
     return (
       <div className="text-center py-20">
         <AlertCircle className="h-10 w-10 mx-auto mb-4 text-muted-foreground" />
-        <h2 className="text-2xl font-bold">Could not load profile</h2>
+        <h2 className="text-2xl font-bold">Couldn't load this profile</h2>
         <p className="text-muted-foreground mt-2">Try again in a moment.</p>
         <Button variant="outline" className="mt-6 rounded-full" onClick={() => refetch()}>
           Retry
@@ -177,7 +204,7 @@ export default function ViewProfile() {
   if (!user) {
     return (
       <div className="text-center py-20">
-        <h2 className="text-2xl font-bold">User not found</h2>
+        <h2 className="text-2xl font-bold">Profile not found</h2>
         <Link href="/discover">
           <Button variant="link" className="mt-4">Back to Discover</Button>
         </Link>
@@ -209,14 +236,30 @@ export default function ViewProfile() {
               </div>
             </div>
             <div className="pb-2 flex items-center gap-2 w-full sm:w-auto">
-              <Button
-                className="flex-1 sm:flex-none rounded-full px-8 shadow-md hover-elevate"
-                size="lg"
-                onClick={handleConnect}
-                disabled={createConnection.isPending}
-              >
-                <Check className="mr-2 h-5 w-5" /> Connect
-              </Button>
+              {connectionSent ? (
+                <Button
+                  className="flex-1 sm:flex-none rounded-full px-8 shadow-md"
+                  size="lg"
+                  variant="secondary"
+                  disabled
+                >
+                  <UserCheck className="mr-2 h-5 w-5" /> Requested
+                </Button>
+              ) : (
+                <Button
+                  className="flex-1 sm:flex-none rounded-full px-8 shadow-md hover-elevate"
+                  size="lg"
+                  onClick={handleConnect}
+                  disabled={createConnection.isPending}
+                >
+                  {createConnection.isPending ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  ) : (
+                    <Check className="mr-2 h-5 w-5" />
+                  )}
+                  {createConnection.isPending ? "Sending…" : "Connect"}
+                </Button>
+              )}
 
               {/* More actions menu */}
               <DropdownMenu>
@@ -316,8 +359,7 @@ export default function ViewProfile() {
           <AlertDialogHeader>
             <AlertDialogTitle>Block {user.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              They won't be able to see your profile, discover you, send connection requests, or message you.
-              You can unblock them any time from Settings.
+              They won't be able to find your profile, send connection requests, or message you. You can unblock them any time from Settings.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -339,7 +381,7 @@ export default function ViewProfile() {
           <DialogHeader>
             <DialogTitle>Report {user.name}</DialogTitle>
             <DialogDescription>
-              Help us keep Circl safe. Your report is anonymous.
+              Your report is anonymous. Thanks for helping keep Circl safe.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -357,7 +399,7 @@ export default function ViewProfile() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="report-description">Additional details (optional)</Label>
+              <Label htmlFor="report-description">Additional details <span className="text-muted-foreground font-normal">(optional)</span></Label>
               <Textarea
                 id="report-description"
                 placeholder="Describe what happened…"

@@ -1,6 +1,7 @@
 import { useGetDashboardStats } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { AlertCircle, Users, UserPlus, MessageCircle, Eye } from "lucide-react";
 import { UserAvatar } from "@/components/user-avatar";
 import { Link } from "wouter";
@@ -28,13 +29,13 @@ export default function Dashboard() {
         <h1 className="text-3xl font-display font-bold tracking-tight">Dashboard</h1>
         <div className="flex flex-col items-center justify-center py-20 text-center bg-card rounded-2xl border shadow-sm">
           <AlertCircle className="h-10 w-10 mb-4 text-muted-foreground" />
-          <h2 className="text-xl font-display font-bold">Could not load dashboard</h2>
+          <h2 className="text-xl font-display font-bold">Couldn't load your dashboard</h2>
           <p className="text-muted-foreground mt-2 max-w-sm">
             Try again in a moment.
           </p>
-          <button className="text-primary hover:underline mt-4 text-sm font-medium" onClick={() => refetch()}>
+          <Button variant="outline" className="mt-6 rounded-full" onClick={() => refetch()}>
             Retry
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -120,7 +121,11 @@ export default function Dashboard() {
                 {stats.recentMatches.map((user) => (
                   <Link key={user.id} href={`/profile/${user.id}`}>
                     <div className="flex flex-col items-center gap-2 group cursor-pointer">
-                      <UserAvatar user={user} className="h-16 w-16 group-hover:ring-2 ring-primary transition-all ring-offset-2 ring-offset-background" showOnlineStatus />
+                      <UserAvatar
+                        user={user}
+                        className="h-16 w-16 group-hover:ring-2 ring-primary transition-all ring-offset-2 ring-offset-background"
+                        showOnlineStatus
+                      />
                       <span className="text-xs font-medium">{user.name.split(" ")[0]}</span>
                     </div>
                   </Link>
@@ -129,9 +134,9 @@ export default function Dashboard() {
             ) : (
               <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
                 <Users className="h-10 w-10 mb-3 opacity-20" />
-                <p>No recent matches.</p>
+                <p className="font-medium text-sm">No matches yet</p>
                 <Link href="/discover" className="text-primary hover:underline mt-2 text-sm font-medium">
-                  Go discover people
+                  Start discovering people →
                 </Link>
               </div>
             )}
@@ -146,15 +151,17 @@ export default function Dashboard() {
             {stats.activityByCategory.length > 0 ? (
               <div className="space-y-4">
                 {stats.activityByCategory.map((activity, i) => {
-                  const maxCount = Math.max(...stats.activityByCategory.map(a => a.count));
+                  const maxCount = Math.max(...stats.activityByCategory.map((a) => a.count));
                   const percentage = Math.round((activity.count / maxCount) * 100);
-                  
+
                   return (
                     <div key={i} className="flex items-center gap-3">
-                      <div className="w-24 text-sm font-medium truncate">{activity.category}</div>
+                      <div className="w-24 text-sm font-medium truncate capitalize">
+                        {activity.category}
+                      </div>
                       <div className="flex-1 h-3 bg-secondary rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary rounded-full" 
+                        <div
+                          className="h-full bg-primary rounded-full"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
@@ -162,13 +169,18 @@ export default function Dashboard() {
                         {activity.count}
                       </div>
                     </div>
-                  )
+                  );
                 })}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-                <p className="font-medium text-sm">No campus activities yet.</p>
-                <p className="text-xs mt-1">Create the first one in Happening Now!</p>
+                <p className="font-medium text-sm">Nothing posted yet</p>
+                <Link
+                  href="/happening-now"
+                  className="text-primary hover:underline mt-2 text-sm font-medium"
+                >
+                  Be the first to create an activity →
+                </Link>
               </div>
             )}
           </CardContent>
