@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, or, and, desc, inArray, count, ne } from "drizzle-orm";
 import { db, conversationsTable, messagesTable, usersTable } from "@workspace/db";
 import { formatUserProfile } from "../lib/userProfile";
+import { areUsersBlocked, getBlockedUserIds } from "../lib/blocks";
 import {
   GetMessagesParams,
   GetMessagesResponse,
@@ -46,7 +47,21 @@ router.get("/conversations", async (req, res): Promise<void> => {
   const otherUsers = await db.select().from(usersTable).where(inArray(usersTable.id, otherUserIds));
   const userMap = new Map(otherUsers.map((u) => [u.id, u]));
 
-  const convIds = convs.map((c) => c.id);
+  // Get blocked user IDs to filter conversations
+  const blockedIds = await getBlockedUserIds(currentUserId);
+
+  // Filter out conversations where the other party is blocked
+  const visibleConvs = convs.filter((c) => {
+    const otherId = c.user1Id === currentUserId ? c.user2Id : c.user1Id;
+    return !blockedIds.has(otherId);
+  });
+
+  if (visibleConvs.length === 0) {
+    res.json(ListConversationsResponse.parse([]));
+    return;
+  }
+
+  const convIds = visibleConvs.map((c) => c.id);
 
   // Batch: unread counts per conversation in one query (not N+1)
   const unreadRows = await db
@@ -78,7 +93,7 @@ router.get("/conversations", async (req, res): Promise<void> => {
     }
   }
 
-  const result = convs.map((conv) => {
+  const result = visibleConvs.map((conv) => {
     const otherId = conv.user1Id === currentUserId ? conv.user2Id : conv.user1Id;
     const otherUser = userMap.get(otherId)!;
     const lastMsg = lastMsgMap.get(conv.id);
@@ -181,6 +196,13 @@ router.post("/conversations/:id/messages", async (req, res): Promise<void> => {
 
   if (!conv) {
     res.status(404).json({ error: "Conversation not found" });
+    return;
+  }
+
+  // Block check — prevent messaging between blocked users
+  const otherUserId = conv.user1Id === currentUserId ? conv.user2Id : conv.user1Id;
+  if (await areUsersBlocked(currentUserId, otherUserId)) {
+    res.status(403).json({ error: "You cannot message this user" });
     return;
   }
 

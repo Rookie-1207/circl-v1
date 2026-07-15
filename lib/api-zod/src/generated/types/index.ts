@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './blockedUser';
+export * from './blockResult';
 export * from './categoryActivity';
 export * from './connection';
 export * from './connectionInput';
@@ -15,6 +17,7 @@ export * from './connectionPatchStatus';
 export * from './connectionStatus';
 export * from './conversation';
 export * from './dashboardStats';
+export * from './deleteAccountResult';
 export * from './discoverResult';
 export * from './discoverUsersParams';
 export * from './healthStatus';
@@ -27,5 +30,8 @@ export * from './notificationType';
 export * from './profileUpdate';
 export * from './profileUpdateStudentType';
 export * from './readAllResult';
+export * from './report';
+export * from './reportInput';
+export * from './reportInputTargetType';
 export * from './userProfile';
 export * from './userProfileStudentType';

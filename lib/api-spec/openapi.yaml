@@ -20,6 +20,10 @@ tags:
     description: User notifications
   - name: dashboard
     description: Dashboard stats
+  - name: blocks
+    description: User blocking
+  - name: reports
+    description: Content and user reports
 
 security:
   - bearerAuth: []
@@ -68,6 +72,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserProfile"
+    delete:
+      operationId: deleteMyAccount
+      tags: [users]
+      summary: Soft-delete the current user account (scheduled for permanent deletion in 30 days)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteAccountResult"
 
   /users:
     get:
@@ -286,6 +301,76 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Notification"
+
+  /users/me/blocks:
+    get:
+      operationId: listBlockedUsers
+      tags: [blocks]
+      summary: List users blocked by the current user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BlockedUser"
+
+  /users/{id}/block:
+    post:
+      operationId: blockUser
+      tags: [blocks]
+      summary: Block a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockResult"
+    delete:
+      operationId: unblockUser
+      tags: [blocks]
+      summary: Unblock a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlockResult"
+
+  /reports:
+    post:
+      operationId: createReport
+      tags: [reports]
+      summary: Report a user, activity, or message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
 
   /dashboard/stats:
     get:
@@ -545,3 +630,63 @@ components:
           type: string
         count:
           type: integer
+
+    DeleteAccountResult:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+
+    BlockResult:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+
+    BlockedUser:
+      type: object
+      required: [id, blockedUser, createdAt]
+      properties:
+        id:
+          type: integer
+        blockedUser:
+          $ref: "#/components/schemas/UserProfile"
+        createdAt:
+          type: string
+
+    ReportInput:
+      type: object
+      required: [targetType, targetId, reason]
+      properties:
+        targetType:
+          type: string
+          enum: [user, activity, message]
+        targetId:
+          type: integer
+        reason:
+          type: string
+        description:
+          type: string
+
+    Report:
+      type: object
+      required: [id, reporterId, targetType, targetId, reason, status, createdAt]
+      properties:
+        id:
+          type: integer
+        reporterId:
+          type: integer
+        targetType:
+          type: string
+        targetId:
+          type: integer
+        reason:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+        createdAt:
+          type: string

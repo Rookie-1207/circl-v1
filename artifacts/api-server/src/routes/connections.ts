@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, and, or, inArray } from "drizzle-orm";
 import { db, connectionsTable, usersTable, conversationsTable, notificationsTable } from "@workspace/db";
 import { formatUserProfile } from "../lib/userProfile";
+import { areUsersBlocked } from "../lib/blocks";
 import {
   ListConnectionsQueryParams,
   ListConnectionsResponse,
@@ -73,6 +74,12 @@ router.post("/connections", async (req, res): Promise<void> => {
   // Prevent self-connections
   if (toUserId === currentUserId) {
     res.status(400).json({ error: "Cannot connect with yourself" });
+    return;
+  }
+
+  // Block check — silently treat as if the user doesn't exist
+  if (await areUsersBlocked(currentUserId, toUserId)) {
+    res.status(404).json({ error: "User not found" });
     return;
   }
 

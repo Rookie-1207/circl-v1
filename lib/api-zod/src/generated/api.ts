@@ -93,6 +93,14 @@ export const UpdateMyProfileResponse = zod.object({
 
 
 /**
+ * @summary Soft-delete the current user account (scheduled for permanent deletion in 30 days)
+ */
+export const DeleteMyAccountResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
  * @summary Discover users with optional filters
  */
 export const DiscoverUsersQueryParams = zod.object({
@@ -525,6 +533,87 @@ export const MarkNotificationReadResponse = zod.object({
   "profileCompletion": zod.number().min(markNotificationReadResponseActorProfileCompletionMin).max(markNotificationReadResponseActorProfileCompletionMax),
   "createdAt": zod.string()
 }).optional(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary List users blocked by the current user
+ */
+export const listBlockedUsersResponseBlockedUserProfileCompletionMin = 0;
+export const listBlockedUsersResponseBlockedUserProfileCompletionMax = 100;
+
+
+
+export const ListBlockedUsersResponseItem = zod.object({
+  "id": zod.number(),
+  "blockedUser": zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "university": zod.string(),
+  "bio": zod.string().nullish(),
+  "department": zod.string().nullish(),
+  "year": zod.string().nullish(),
+  "section": zod.string().nullish(),
+  "studentType": zod.union([zod.literal('hostel'),zod.literal('day_scholar'),zod.literal(null)]).nullish(),
+  "githubUrl": zod.string().nullish(),
+  "linkedinUrl": zod.string().nullish(),
+  "interests": zod.array(zod.string()),
+  "lookingFor": zod.array(zod.string()),
+  "availability": zod.array(zod.string()),
+  "goals": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "isOnline": zod.boolean(),
+  "profileCompletion": zod.number().min(listBlockedUsersResponseBlockedUserProfileCompletionMin).max(listBlockedUsersResponseBlockedUserProfileCompletionMax),
+  "createdAt": zod.string()
+}),
+  "createdAt": zod.string()
+})
+export const ListBlockedUsersResponse = zod.array(ListBlockedUsersResponseItem)
+
+
+/**
+ * @summary Block a user
+ */
+export const BlockUserParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const BlockUserResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Unblock a user
+ */
+export const UnblockUserParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UnblockUserResponse = zod.object({
+  "ok": zod.boolean()
+})
+
+
+/**
+ * @summary Report a user, activity, or message
+ */
+export const CreateReportBody = zod.object({
+  "targetType": zod.enum(['user', 'activity', 'message']),
+  "targetId": zod.number(),
+  "reason": zod.string(),
+  "description": zod.string().optional()
+})
+
+export const CreateReportResponse = zod.object({
+  "id": zod.number(),
+  "reporterId": zod.number(),
+  "targetType": zod.string(),
+  "targetId": zod.number(),
+  "reason": zod.string(),
+  "description": zod.string().nullish(),
+  "status": zod.string(),
   "createdAt": zod.string()
 })
 

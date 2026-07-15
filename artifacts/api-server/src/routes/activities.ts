@@ -9,6 +9,7 @@ import {
 } from "@workspace/db";
 import { z } from "zod";
 import { formatUserProfile } from "../lib/userProfile";
+import { areUsersBlocked } from "../lib/blocks";
 
 const router: IRouter = Router();
 
@@ -320,6 +321,9 @@ router.post("/activities", async (req, res): Promise<void> => {
 });
 
 // POST /activities/:id/join
+// Race-condition safe: relies on the DB-level unique constraint
+// (activity_participants_activity_user_unique_idx) via onConflictDoNothing
+// instead of a SELECT-then-INSERT pattern.
 router.post("/activities/:id/join", async (req, res): Promise<void> => {
   const currentUserId = req.auth.userId;
   const activityId = parseInt(req.params.id);
@@ -349,22 +353,14 @@ router.post("/activities/:id/join", async (req, res): Promise<void> => {
     return;
   }
 
-  // Check already joined
-  const [existing] = await db
-    .select()
-    .from(activityParticipantsTable)
-    .where(
-      and(
-        eq(activityParticipantsTable.activityId, activityId),
-        eq(activityParticipantsTable.userId, currentUserId),
-      ),
-    );
-
-  if (existing) {
-    res.json({ status: existing.status });
+  // Block check — prevent joining activities hosted by/for blocked users
+  if (await areUsersBlocked(currentUserId, activity.hostUserId)) {
+    res.status(403).json({ error: "You cannot join this activity" });
     return;
   }
 
+  // Atomic insert: the DB unique constraint prevents duplicates even under
+  // concurrent requests — onConflictDoNothing makes the duplicate a no-op.
   const [participant] = await db
     .insert(activityParticipantsTable)
     .values({
@@ -372,7 +368,23 @@ router.post("/activities/:id/join", async (req, res): Promise<void> => {
       userId: currentUserId,
       status: "pending",
     })
+    .onConflictDoNothing()
     .returning();
+
+  if (!participant) {
+    // Already joined — return the existing row's status
+    const [existing] = await db
+      .select()
+      .from(activityParticipantsTable)
+      .where(
+        and(
+          eq(activityParticipantsTable.activityId, activityId),
+          eq(activityParticipantsTable.userId, currentUserId),
+        ),
+      );
+    res.json({ status: existing?.status ?? "pending" });
+    return;
+  }
 
   res.status(201).json({ status: participant.status });
 });

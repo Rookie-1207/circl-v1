@@ -288,6 +288,11 @@ async function findOrCreateUser(payload: SupabaseJwtPayload & { sub: string }): 
     .where(eq(usersTable.supabaseUserId, payload.sub));
 
   if (existingUser) {
+    // Deny access for soft-deleted accounts
+    if (existingUser.deletedAt) {
+      throw Object.assign(new Error("Account has been deleted"), { statusCode: 401 });
+    }
+
     return {
       userId: existingUser.id,
       supabaseUserId: payload.sub,

@@ -9,6 +9,17 @@ export interface HealthStatus {
   status: string;
 }
 
+/**
+ * @nullable
+ */
+export type UserProfileStudentType = typeof UserProfileStudentType[keyof typeof UserProfileStudentType] | null;
+
+
+export const UserProfileStudentType = {
+  hostel: 'hostel',
+  day_scholar: 'day_scholar',
+} as const;
+
 export interface UserProfile {
   id: number;
   name: string;
@@ -22,7 +33,7 @@ export interface UserProfile {
   /** @nullable */
   section?: string | null;
   /** @nullable */
-  studentType?: 'hostel' | 'day_scholar' | null;
+  studentType?: UserProfileStudentType;
   /** @nullable */
   githubUrl?: string | null;
   /** @nullable */
@@ -35,6 +46,10 @@ export interface UserProfile {
   /** @nullable */
   avatarUrl?: string | null;
   isOnline: boolean;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
   profileCompletion: number;
   createdAt: string;
 }
@@ -44,13 +59,21 @@ export interface DiscoverResult {
   compatibilityScore: number;
 }
 
+export type ProfileUpdateStudentType = typeof ProfileUpdateStudentType[keyof typeof ProfileUpdateStudentType];
+
+
+export const ProfileUpdateStudentType = {
+  hostel: 'hostel',
+  day_scholar: 'day_scholar',
+} as const;
+
 export interface ProfileUpdate {
   name?: string;
   bio?: string;
   department?: string;
   year?: string;
   section?: string;
-  studentType?: 'hostel' | 'day_scholar';
+  studentType?: ProfileUpdateStudentType;
   githubUrl?: string;
   linkedinUrl?: string;
   interests?: string[];
@@ -166,6 +189,48 @@ export interface DashboardStats {
   activityByCategory: CategoryActivity[];
 }
 
+export interface DeleteAccountResult {
+  message: string;
+}
+
+export interface BlockResult {
+  ok: boolean;
+}
+
+export interface BlockedUser {
+  id: number;
+  blockedUser: UserProfile;
+  createdAt: string;
+}
+
+export type ReportInputTargetType = typeof ReportInputTargetType[keyof typeof ReportInputTargetType];
+
+
+export const ReportInputTargetType = {
+  user: 'user',
+  activity: 'activity',
+  message: 'message',
+} as const;
+
+export interface ReportInput {
+  targetType: ReportInputTargetType;
+  targetId: number;
+  reason: string;
+  description?: string;
+}
+
+export interface Report {
+  id: number;
+  reporterId: number;
+  targetType: string;
+  targetId: number;
+  reason: string;
+  /** @nullable */
+  description?: string | null;
+  status: string;
+  createdAt: string;
+}
+
 export type DiscoverUsersParams = {
 category?: string;
 search?: string;
@@ -185,3 +250,4 @@ export const ListConnectionsStatus = {
   rejected: 'rejected',
   passed: 'passed',
 } as const;
+

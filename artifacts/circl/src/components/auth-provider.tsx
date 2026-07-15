@@ -3,6 +3,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -14,6 +15,9 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   isLoading: boolean;
   isSupabaseConfigured: boolean;
+  /** True when the session expired without an explicit logout (not when the user clicked Log out). */
+  sessionExpired: boolean;
+  clearSessionExpired: () => void;
   session: Session | null;
   user: User | null;
   login: (email: string, password: string) => Promise<AuthError | null>;
@@ -32,6 +36,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const isIntentionalLogout = useRef(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -50,11 +56,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (!isMounted) return;
       setSession(nextSession);
       setIsLoading(false);
-      if (!nextSession) {
+
+      if (!nextSession && event === "SIGNED_OUT") {
         queryClient.clear();
+        // If the logout was NOT triggered intentionally (user clicked "Log out"),
+        // mark the session as expired so the AuthGate can show a friendly message.
+        if (!isIntentionalLogout.current) {
+          setSessionExpired(true);
+        }
+        isIntentionalLogout.current = false;
       }
     });
 
@@ -69,6 +83,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: Boolean(session),
       isLoading,
       isSupabaseConfigured,
+      sessionExpired,
+      clearSessionExpired: () => setSessionExpired(false),
       session,
       user: session?.user ?? null,
       async login(email, password) {
@@ -107,10 +123,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async logout() {
         if (!supabase) return null;
 
+        isIntentionalLogout.current = true;
         const { error } = await supabase.auth.signOut();
         if (!error) {
           setSession(null);
           queryClient.clear();
+        } else {
+          // Reset the flag if signOut failed
+          isIntentionalLogout.current = false;
         }
         return error;
       },
@@ -131,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return error;
       },
     }),
-    [isLoading, queryClient, session],
+    [isLoading, queryClient, session, sessionExpired],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,0 +1,1 @@
+- [Launch-Blocker Features](launch-features.md) — Delete Account (soft-delete+30d), Block (bidirectional, lib/blocks.ts), Report (DB only), Join Safety (atomic insert), Session Expiry (isIntentionalLogout ref).

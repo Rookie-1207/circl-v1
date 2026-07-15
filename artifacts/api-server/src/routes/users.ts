@@ -12,6 +12,7 @@ import {
   GetUserProfileResponse,
 } from "@workspace/api-zod";
 import { formatUserProfile } from "../lib/userProfile";
+import { getBlockedUserIds, areUsersBlocked } from "../lib/blocks";
 
 const router: IRouter = Router();
 
@@ -91,6 +92,29 @@ router.patch("/users/me", async (req, res): Promise<void> => {
   res.json(UpdateMyProfileResponse.parse(formatUserProfile(updated)));
 });
 
+// DELETE /users/me — soft-delete account, schedules permanent deletion in 30 days
+router.delete("/users/me", async (req, res): Promise<void> => {
+  const currentUserId = req.auth.userId;
+
+  const now = new Date();
+  const scheduledDeletionAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+  const [updated] = await db
+    .update(usersTable)
+    .set({ deletedAt: now, scheduledDeletionAt })
+    .where(eq(usersTable.id, currentUserId))
+    .returning();
+
+  if (!updated) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
+  res.json({
+    message: "Your account has been scheduled for deletion. You have 30 days to reverse this by contacting support.",
+  });
+});
+
 router.get("/users", async (req, res): Promise<void> => {
   const currentUserId = req.auth.userId;
 
@@ -119,9 +143,15 @@ router.get("/users", async (req, res): Promise<void> => {
     excludedIds.add(conn.toUserId);
   }
 
+  // Also exclude blocked users (bidirectional)
+  const blockedIds = await getBlockedUserIds(currentUserId);
+  for (const id of blockedIds) excludedIds.add(id);
+
   // Build SQL-level conditions to avoid loading records we'll immediately discard
   const conditions = [
     not(inArray(usersTable.id, Array.from(excludedIds))),
+    // Exclude soft-deleted accounts
+    sql`${usersTable.deletedAt} IS NULL`,
     ...(search
       ? [
           or(
@@ -186,16 +216,24 @@ router.get("/users", async (req, res): Promise<void> => {
 });
 
 router.get("/users/:id", async (req, res): Promise<void> => {
+  const currentUserId = req.auth.userId;
+
   const params = GetUserProfileParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
 
+  // Block check — treat blocked profiles as not found
+  if (await areUsersBlocked(currentUserId, params.data.id)) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+
   const [user] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.id, params.data.id));
+    .where(and(eq(usersTable.id, params.data.id), sql`${usersTable.deletedAt} IS NULL`));
 
   if (!user) {
     res.status(404).json({ error: "User not found" });

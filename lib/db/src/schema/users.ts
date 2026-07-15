@@ -20,6 +20,10 @@ export const usersTable = pgTable("users", {
   goals: text("goals"),
   avatarUrl: text("avatar_url"),
   isOnline: boolean("is_online").notNull().default(false),
+  // Soft delete — set when account is marked for deletion
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  // Permanent deletion scheduled 30 days after soft-delete
+  scheduledDeletionAt: timestamp("scheduled_deletion_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
