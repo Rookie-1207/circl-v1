@@ -86,6 +86,15 @@ app.use(limiter);
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
+// ── Root-level health check ───────────────────────────────────────────────────
+// Replit's autoscale probe strips the artifact path prefix ("/api") before
+// forwarding to the container, so the container receives GET /healthz, not
+// GET /api/healthz. We expose it at both paths so the probe works in every
+// environment (direct container access keeps /api/healthz; proxy strips it).
+app.get("/healthz", (_req, res) => {
+  res.json({ status: "ok" });
+});
+
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use("/api", router);
 
